@@ -1,4 +1,1 @@
-hql-report
-==========
-
-HQL project report
+Latex report
