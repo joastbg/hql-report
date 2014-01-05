@@ -1,0 +1,138 @@
+\documentclass[a4paper,11pt]{report}
+
+\def\Author{Andreas Bock, bock@andreasbock.dk\\
+Johan Astborg, joastbg@gmail.com\\\\
+Supervisors:\\
+Jost Berthold, jb.diku@gmail.com\\
+Sinan Gabel, sinan.gabel@gmail.com
+}
+\def\Title{\bf HQL - \textsc{Hiperfit} Quant Library\\ {\Large Project Report}}
+
+%
+%--------------------   start of the 'preamble'
+%
+\usepackage{graphicx,amssymb,amstext,amsmath,graphics,epsfig,color}
+\usepackage{fancyhdr}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{lmodern,inconsolata}
+\usepackage{array, xcolor, lipsum, bibentry, fancyhdr}
+\usepackage[absolute]{textpos}
+\usepackage[top=25mm, bottom=25mm, left=22mm, right=22mm]{geometry} %Layout of page
+\usepackage{lastpage} % number of last page 
+%
+%%    homebrew commands -- to save typing
+\newcommand\etc{\textsl{etc}}
+\newcommand\eg{\textsl{eg.}\ }
+\newcommand\etal{\textsl{et al.}}
+\newcommand\Quote[1]{\lq\textsl{#1}\rq}
+\newcommand\fr[2]{{\textstyle\frac{#1}{#2}}}
+\newcommand\miktex{\textsl{MikTeX}}
+\newcommand\comp{\textsl{The Companion}}
+\newcommand\nss{\textsl{Not so Short}}
+
+\usepackage[T1]{fontenc} % font
+\setlength{\parindent}{0in}
+\definecolor{lightgray}{rgb}{0.9,0.9,0.9}
+
+\newenvironment{filecode}[1][]
+{\minipage{\linewidth}
+\lstset{basicstyle=\ttfamily\footnotesize,frame=single,
+numberstyle=\small\color{black},keywordstyle=\color{black},commentstyle=\color{black},
+stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=Haskell,#1}}
+{\endminipage}
+\renewcommand*\rmdefault{ppl}
+
+\pagestyle{fancy}
+\fancyhf{} 
+ 
+\lhead{\uppercase{Hiperfit Quant Library}}
+\rhead{\nouppercase{\rightmark}}
+ 
+\cfoot{\thepage\ / \phantomsection\pageref*{LastPage}}
+ 
+\lfoot{
+\begin{textblock*}{100mm}(30mm, 280mm )
+\end{textblock*}
+}
+
+%
+%---------------------   end of the 'preamble'
+%
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\pagestyle{fancy}               % Fräcka sidhuvuden
+\addtolength{\headwidth}{2cm}   % Sidhuvd bredare än texten.
+\renewcommand{\headrulewidth}{0.4pt} % Linje i sidhuvud är 0.4 punkter
+%\renewcommand{\footrulewidth}{0.4pt} % Linje i sidfot är 2 punkter
+
+% Följande kommandon definerar vad som ska finnas i sidhuvud och
+% sidfot. Om man skriver dubbelsidiga dokument anger man två alternativ
+% med komma mellan. Den första gäller då för udda sidor och den andra
+% för jämna sidor. Bokstäverna ska tolkas som:
+% L = left, C = center, R = right,
+% E = even (jämna sidor), O = odd (udda sidor)
+% E och O fyller ingen funktion om man inte har optionen twopage definierad
+\fancyhead[R]{\bf{\nouppercase{\leftmark}}}	% Vänstertext i sidhuvud
+\fancyhead[L]{\nouppercase{\rightmark}}	% Högertext i sidhuvud
+%\fancyfoot[C]{}	% Mittentext i sidfot
+%\fancyfoot[LO,RE]{}		% Vänster udda, höger jämna sidor
+%\fancyfoot[LE,RO]{}	% Vänster jämna, höger udda sidor
+
+
+\begin{document}
+%-----------------------------------------------------------
+\begin{titlepage}
+
+\textsc{\LARGE }\\[1.5cm]
+\textsc{\Large }\\[0.5cm]
+\textsc{\large }\\[0.5cm]
+ 
+% Title
+\begin{center}
+\HRule \\[0.5cm]
+\huge \bfseries \Title\\[0.5cm]
+\HRule \\[0.5cm]
+
+% Author
+\Large
+\emph{Author:}\\
+\textsc{Andreas Bock \\ Johan Astborg }\\[3cm]
+
+
+\date{\today}
+
+
+
+% Bottom of the page
+{\large January 25, 2011}\\[4cm]
+%\includegraphics{Logo}\\[1cm] % Department/University logo
+ 
+\vfill
+\end{center}
+
+\end{titlepage}
+%-----------------------------------------------------------
+\begin{abstract}\centering
+
+The building of a multithreaded, high performance ray tracer supporting
+direct and global illumination, shading and meshes.
+\end{abstract}
+%-----------------------------------------------------------
+\tableofcontents
+%-----------------------------------------------------------
+\listoftables
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+
+\include{intro}
+
+%-----------------------------------------------------------
+\addcontentsline{toc}{chapter}{\numberline{}Bibliography}
+\bibliographystyle{plain}
+\bibliography{biblio}
+%-----------------------------------------------------------
+\appendix
+\include{app1}
+%-----------------------------------------------------------
+\end{document}
