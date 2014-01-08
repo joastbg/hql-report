@@ -20,6 +20,8 @@ Sinan Gabel, sinan.gabel@gmail.com
 \usepackage[absolute]{textpos}
 \usepackage[top=25mm, bottom=25mm, left=22mm, right=22mm]{geometry} %Layout of page
 \usepackage{lastpage} % number of last page 
+\usepackage{lipsum}
+\usepackage{microtype}
 %
 %%    homebrew commands -- to save typing
 \newcommand\etc{\textsl{etc}}
@@ -80,6 +82,56 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 %\fancyfoot[LE,RO]{}	% Vänster jämna, höger udda sidor
 
 
+%%%%********************************************************************
+% fancy quotes
+\definecolor{quotemark}{gray}{0.7}
+\makeatletter
+\def\fquote{%
+    \@ifnextchar[{\fquote@i}{\fquote@i[]}%]
+           }%
+\def\fquote@i[#1]{%
+    \def\tempa{#1}%
+    \@ifnextchar[{\fquote@ii}{\fquote@ii[]}%]
+                 }%
+\def\fquote@ii[#1]{%
+    \def\tempb{#1}%
+    \@ifnextchar[{\fquote@iii}{\fquote@iii[]}%]
+                      }%
+\def\fquote@iii[#1]{%
+    \def\tempc{#1}%
+    \vspace{1em}%
+    \noindent%
+    \begin{list}{}{%
+         \setlength{\leftmargin}{0.1\textwidth}%
+         \setlength{\rightmargin}{0.1\textwidth}%
+                  }%
+         \item[]%
+         \begin{picture}(0,0)%
+         \put(-15,-5){\makebox(0,0){\scalebox{3}{\textcolor{quotemark}{``}}}}%
+         \end{picture}%
+         \begingroup\itshape}%
+ %%%%********************************************************************
+ \def\endfquote{%
+ \endgroup\par%
+ \makebox[0pt][l]{%
+ \hspace{0.8\textwidth}%
+ \begin{picture}(0,0)(0,0)%
+ \put(15,15){\makebox(0,0){%
+ \scalebox{3}{\color{quotemark}''}}}%
+ \end{picture}}%
+ \ifx\tempa\empty%
+ \else%
+    \ifx\tempc\empty%
+       \hfill\rule{100pt}{0.5pt}\\\mbox{}\hfill\tempa,\ \emph{\tempb}%
+   \else%
+       \hfill\rule{100pt}{0.5pt}\\\mbox{}\hfill\tempa,\ \emph{\tempb},\ \tempc%
+   \fi\fi\par%
+   \vspace{0.5em}%
+ \end{list}%
+ }%
+ \makeatother
+ %%%%********************************************************************
+
 \begin{document}
 %-----------------------------------------------------------
 \begin{titlepage}
@@ -113,7 +165,7 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 
 \end{titlepage}
 %-----------------------------------------------------------
-\begin{abstract}\centering
+\begin{abstract}
 
 The building of a multithreaded, high performance ray tracer supporting
 direct and global illumination, shading and meshes.
