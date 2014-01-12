@@ -1,0 +1,41 @@
+\chapter{Architecture}
+\section{Language features}
+
+Functional languages lend themselves well to the domain of finance due
+to several reasons such as modularity\cite{hughes:matters-cj}, laziness[Peyton, Eber][Section 5.3]. Moveover, the mathematical nature of finance makes functional languages suitable for valuation due its inherent mathematical foundation[ref].
+
+Haskell's advanced type system helps ensure that your code is safe, and its classes system allows us to define type-safe interfaces for operations on financial products who themselves are represented by Haskell data types. 
+Statically typed languages have the advantage of discovering many errors at compile time, and the type class system enables us to overload functionality in our programs based on our types. This is a very desirable feature, as we want our financial products to have the same API (e.g. a function \texttt{presentValue} should return the present value regardless of the product type).\\
+
+\section{Design principles}
+
+
+From the discussion in section[Fixed Income] it should be clear that any cashflow can be represented as a collection of zero coupon bonds.
+
+This is exactly the architecture we use to represent the bonds internally, as doing so exploits a number of properties of Haskell.
+
+- laziness
+- parallelism
+- We can do both calendar and non-calendar time by using offsets, the interfaces are independent from the internal "pricing engine"
+
+Model everythign as zero coupon bonds in lists (zeros, fixed, floating).
+
+All bonds can be represented by a list of payments.
+
+Something about how interface works with the internal representation and why we have designed the interface in this manner.
+
+Sinan Gabel's DerivativesExpert[ref] supports both "calendar" and "non-calendar" time  - talk about how our internals don’t care about dates
+
+\section{Limitations}
+
+
+    - GADT/Type families etc are not suited for representing Currency type with the properties we wanted (+,*,/, etc)
+
+Due to the myriad of conventions in finance, it is desirable to have an interface that allows the user to only specify a subset of the required information for a financial product, and have the the internals default to certain value. For instance in the MBO market, the day count convention is typically 30/360 (verify and reference), so it would be 
+
+In C++, this is achieved through function overloading, which is arguably a more elegant interface to exporting Haskell functions that return data types with pre-set fields.
+
+The stickiness of the IO monad poses a problem for currency exchanges. Assuming foreign exchange rates can be retrieved from institutions such as \href{Bloomberg}{(http://www.bloomberg.com/markets/currencies/)}, we would have to contaminate the purity of our software with IO. Ideally, we want to imbue the internals with implicit currency conversion to accomodate for intercurrency swaps. \texttt{unsafePerformIO} could be used to fetch the foreign exchange rates, but this introduces more problems e.g. what happens if the server we are querying is not live?
+In Scala, we would be able to set "implicits" \ab{Johan, help here}.
+
+A (\texttt{State}) monad could be a way of solving the problem - we structure our program to take a set of recent exchange rates (and other "online" information essential to pricing) and performs the computations.

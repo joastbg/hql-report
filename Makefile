@@ -1,5 +1,7 @@
 filename=report
 
+all:
+	pdflatex ${filename}.tex
 pdf: ps
 	ps2pdf ${filename}.ps
 
@@ -22,3 +24,6 @@ readpdf:
 
 clean:
 	rm -f ${filename}.ps ${filename}.pdf ${filename}.log ${filename}.aux ${filename}.out ${filename}.dvi ${filename}.bbl ${filename}.blg
+
+bib:
+	bibtex ${filename}
