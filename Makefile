@@ -52,9 +52,9 @@ ps: dvi
 	@dvips ${filename}.dvi > ex2_output.txt 2>&1
 	$(call psdone,"Success! Wrote "$(filename)".ps")
 dvi:
-	@pdflatex ${filename}.tex > ex2_output.txt 2>&1
+	@pdflatex -shell-escape ${filename}.tex > ex2_output.txt 2>&1
 	$(call colorecho,"latex ")
-	@latex ${filename} > ex2_output.txt 2>&1
+	@latex -shell-escape ${filename} > ex2_output.txt 2>&1
 
 	$(call colorecho,"bibtex ")
 	@bibtex ${filename} > ex2_output.txt 2>&1
@@ -63,13 +63,13 @@ dvi:
 	@makeglossaries ${filename} > ex2_output.txt 2>&1
 
 	$(call colorecho,"latex ")
-	@latex ${filename} > ex2_output.txt 2>&1
+	@latex -shell-escape ${filename} > ex2_output.txt 2>&1
 	
 	$(call colorecho,"makeindex")
 	@makeindex ${filename} > ex2_output.txt 2>&1
 
 	$(call colorecho,"latex")
-	@latex ${filename} > ex2_output.txt 2>&1
+	@latex -shell-escape ${filename} > ex2_output.txt 2>&1
 
 medit:
 	@$(ECHO) -n compiling debug foo.cpp...
