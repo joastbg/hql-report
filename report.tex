@@ -14,6 +14,7 @@ Sinan Gabel, sinan.gabel@gmail.com
 %
 \usepackage{graphicx,amssymb,amstext,amsmath,graphics,epsfig,color}
 \usepackage{fancyhdr}
+\usepackage[xindy]{glossaries}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{lmodern,inconsolata}
@@ -21,6 +22,7 @@ Sinan Gabel, sinan.gabel@gmail.com
 \usepackage[absolute]{textpos}
 %\usepackage[top=25mm, bottom=25mm, left=22mm, right=22mm]{geometry} %Layout of page
 \usepackage{lastpage} % number of last page 
+\usepackage{hyperref}
 \usepackage{lipsum}
 \usepackage{microtype}
 \usepackage{ctable}
@@ -29,7 +31,6 @@ Sinan Gabel, sinan.gabel@gmail.com
 \usepackage[toc,acronym]{glossaries} 
 \makeindex 
 \makeglossaries
-
 
 %
 %%    homebrew commands -- to save typing
@@ -41,7 +42,16 @@ Sinan Gabel, sinan.gabel@gmail.com
 \newcommand\miktex{\textsl{MikTeX}}
 \newcommand\comp{\textsl{The Companion}}
 \newcommand\nss{\textsl{Not so Short}}
+\renewcommand{\bibname}{References}
+\makeglossaries
 
+% Comments
+\newcommand{\comm}[2]{{\sf \(\spadesuit\){\bf #1: }{\rm \sf #2}\(\spadesuit\)}}
+\newcommand{\mcomm}[2]{\marginpar{\scriptsize \comm{#1}{#2}}}
+\newcommand{\ab}[1]{\mcomm{AB}{#1}}
+\newcommand{\ja}[1]{\mcomm{JA}{#1}}
+
+%% Glossaries
 \usepackage[T1]{fontenc} % font
 \setlength{\parindent}{0in}
 \definecolor{lightgray}{rgb}{0.9,0.9,0.9}
@@ -73,7 +83,7 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 
 \pagestyle{fancy}               % Fräcka sidhuvuden
-\addtolength{\headwidth}{2cm}   % Sidhuvd bredare än texten.
+%\addtolength{\headwidth}{2cm}   % Sidhuvd bredare än texten.
 \renewcommand{\headrulewidth}{0.4pt} % Linje i sidhuvud är 0.4 punkter
 %\renewcommand{\footrulewidth}{0.4pt} % Linje i sidfot är 2 punkter
 
@@ -169,7 +179,7 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 
 % Author
 \Large
-\emph{Authors:}\\
+%\emph{Authors:}\\
 \textsc{Andreas Bock \\ Johan Astborg }\\[3cm]
 
 
@@ -178,7 +188,7 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 
 
 % Bottom of the page
-{\large January 25, 2011}\\[4cm]
+{\today}\\[4cm]
 %\includegraphics{Logo}\\[1cm] % Department/University logo
  
 \vfill
@@ -188,7 +198,8 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 %-----------------------------------------------------------
 \begin{abstract}
 
-AF library for bond valuation in Haskell.
+We present our project, \textsc{Hiperfit} Quant Library, where we design and develop the architecture for a Haskell library for quantitative finance.
+
 \end{abstract}
 %-----------------------------------------------------------
 \tableofcontents
@@ -202,18 +213,27 @@ AF library for bond valuation in Haskell.
 %-----------------------------------------------------------
 
 \include{intro}
+\include{bg}
 \include{fi}
-\include{pricing}
+\include{architecture}
 \include{results}
 
+\printglossary
+
+\newglossaryentry{computer}
+{
+  name=computer,
+    description={is a programmable machine that receives input,
+                   stores and manipulates data, and provides
+                                  output in a useful format}
+}
+
 %-----------------------------------------------------------
-
-
 
 %\printglossary[type=\acronymtype,title={List of Abbreviations},toctitle={List of Abbreviations}]
 \addcontentsline{toc}{chapter}{\numberline{}Bibliography}
 \bibliographystyle{plain}
-\bibliography{biblio}
+\bibliography{hql}
 
 \printglossary[type=main,title={Glossary},toctitle={Glossary}]
 %In this section the terminology used in the field of fixed income and how it applies to HQL.

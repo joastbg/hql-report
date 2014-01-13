@@ -24,8 +24,7 @@ readpdf:
 	open ${filename}.pdf &
 
 clean:
-	rm -f ${filename}.ps ${filename}.pdf ${filename}.log ${filename}.aux ${filename}.out ${filename}.dvi ${filename}.bbl ${filename}.blg
-
+	rm -f *.ps *.pdf *.log *.aux *.out *.dvi *.bbl *.blg *.aux *.lot *.lof *.toc *.xdy *.gls *.glo *.glg *.acn *.idx *.ist
 bib:
 	bibtex ${filename}
 
