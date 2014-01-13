@@ -1,4 +1,5 @@
-\documentclass[a4paper,11pt]{report}
+\RequirePackage[l2tabu, orthodox]{nag}
+\documentclass[a4paper,11pt]{scrreprt}
 
 \def\Author{Andreas Bock, bock@andreasbock.dk\\
 Johan Astborg, joastbg@gmail.com\\\\
@@ -18,10 +19,18 @@ Sinan Gabel, sinan.gabel@gmail.com
 \usepackage{lmodern,inconsolata}
 \usepackage{array, xcolor, lipsum, bibentry, fancyhdr}
 \usepackage[absolute]{textpos}
-\usepackage[top=25mm, bottom=25mm, left=22mm, right=22mm]{geometry} %Layout of page
+%\usepackage[top=25mm, bottom=25mm, left=22mm, right=22mm]{geometry} %Layout of page
 \usepackage{lastpage} % number of last page 
 \usepackage{lipsum}
 \usepackage{microtype}
+\usepackage{ctable}
+\usepackage{tikz}
+\usepackage{index}
+\usepackage[toc,acronym]{glossaries} 
+\makeindex 
+\makeglossaries
+
+
 %
 %%    homebrew commands -- to save typing
 \newcommand\etc{\textsl{etc}}
@@ -45,13 +54,13 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 {\endminipage}
 \renewcommand*\rmdefault{ppl}
 
-\pagestyle{fancy}
-\fancyhf{} 
+%\pagestyle{fancy}
+%\fancyhf{} 
  
-\lhead{\uppercase{Hiperfit Quant Library}}
-\rhead{\nouppercase{\rightmark}}
+%\lhead{\uppercase{Hiperfit Quant Library}}
+%\rhead{\nouppercase{\rightmark}}
  
-\cfoot{\thepage\ / \phantomsection\pageref*{LastPage}}
+\cfoot{\thepage}
  
 \lfoot{
 \begin{textblock*}{100mm}(30mm, 280mm )
@@ -132,7 +141,19 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
  \makeatother
  %%%%********************************************************************
 
+%-----------------------------------------------------------
+%% Has to be defined before begin/document
+
+%% Use separate latex file for this...
+
+\newglossaryentry{bar}{name={bar}, description={\ldots}}
+\newglossaryentry{baz}{name={baz}, description={\ldots}}
+
+\newacronym{foobar}{foobar}{\ldots}
+%-----------------------------------------------------------
+
 \begin{document}
+
 %-----------------------------------------------------------
 \begin{titlepage}
 
@@ -167,8 +188,7 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 %-----------------------------------------------------------
 \begin{abstract}
 
-The building of a multithreaded, high performance ray tracer supporting
-direct and global illumination, shading and meshes.
+AF library for bond valuation in Haskell.
 \end{abstract}
 %-----------------------------------------------------------
 \tableofcontents
@@ -177,17 +197,34 @@ direct and global illumination, shading and meshes.
 \addcontentsline{toc}{chapter}{List of Figures}
 \listoffigures
 
+%\printglossary
+
+%-----------------------------------------------------------
+
 \include{intro}
 \include{fi}
 \include{pricing}
 \include{results}
 
 %-----------------------------------------------------------
+
+
+
+%\printglossary[type=\acronymtype,title={List of Abbreviations},toctitle={List of Abbreviations}]
 \addcontentsline{toc}{chapter}{\numberline{}Bibliography}
 \bibliographystyle{plain}
 \bibliography{biblio}
+
+\printglossary[type=main,title={Glossary},toctitle={Glossary}]
+%In this section the terminology used in the field of fixed income and how it applies to HQL.
+\thispagestyle{empty}\cleardoublepage
+\printglossary[type=\acronymtype,title={List of Abbreviations},toctitle={List of Abbreviations}]
+
 %-----------------------------------------------------------
 \appendix
 \include{app1}
+
+
+
 %-----------------------------------------------------------
 \end{document}

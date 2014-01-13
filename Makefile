@@ -2,6 +2,7 @@ filename=report
 
 all:
 	pdflatex ${filename}.tex
+
 pdf: ps
 	ps2pdf ${filename}.ps
 
@@ -11,7 +12,7 @@ ps: dvi
 dvi:
 	latex ${filename}
 	bibtex ${filename}
-	latex ${filename}
+	makeglossaries ${filename}
 	latex ${filename}
 medit:
 	mate *.tex
@@ -27,3 +28,6 @@ clean:
 
 bib:
 	bibtex ${filename}
+
+glossaries:
+	makeglossaries ${filename}
