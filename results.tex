@@ -12,24 +12,45 @@
 
 Our project is far from a fully-fledged library, and many more modules must be added.
 
-First of all we do not have support for the ubiquitous floating-rate bonds (see appendix X section something), where we must rely on Monte Carlo simulations for valuation.
+First of all we do not have support for the floating rate bonds
+(see appendix X section something) due to the lack of of Monte Carlo
+simulation module. A natural next step after floating rate support
+would then be to implement interest rate derivatives such as swaps.
 
-A natural next step would then be to implement interest rate derivatives such as swaps, caps, floors [ref].
-There are two obvious ways in which we can extend HQL with interest rate derivatives support. For instance, swaps can be modelled by combining a fixed and a floating leg, the latter still not yet being supported. On the other hand, it could be built as a list of forward-rate agreements (make sure this is explained above, or refer to Appendix) between the two parties in question.
+There are two obvious ways in which we can extend HQL with interest rate
+derivatives support. For instance, swaps can be modelled by combining a
+fixed and a floating leg, the latter still not yet being supported. On the
+other hand, it could be built as a list of forward-rate agreements (make sure
+this is explained above, or refer to Appendix) between the two parties in
+question.\\
 
-Another interesting extension is to implement a way of generating yield curves from portfolios using bootstrapping or interpolation [ref] (linear equations (C. Munk p26-27)). This would essentially allow users to import data from external sources such as Bloomberg, Reuters, and build curves in HQL for bond valuation.
+Alas, our library is also missing a key component which is a proper calendar
+module. We currently allow the users to supply a variable number of
+settlements per year. This needs to be constrained so that the users either
+specify a standard settlement pattern (missing an example) or \emph{all}
+payment dates for OTC products. Moreover, HQL currently assumes that all
+weekdays are valid payments dates. This doesn't cater to local holidays
+(e.g. January $1^{\text{st}}$ in Denmark, $4^{\text{th}}$ of July in the
+United States, etc) which may be computed as offsets from Easter Sunday.\\
 
-Support for mortgage-backed bonds is also missing in our library. We provide an MBO class so that Passthroughs/MBOs can share a common interface. Prepayment estimates must also be computed.
+Another interesting extension is to implement a way of generating term
+sructures from portfolios using bootstrapping and interpolation\footnote{need
+a reference to Björk/Munk here}. This would essentially allow users to import
+data from external sources and use HQL to build term structures and perform
+bond valuation.\\
 
-Cubic splines or Nelson-Siegel method for obtain term structure as a function.
+Support for mortgage-backed bonds is also missing in our library. We provide
+an MBO class to be used in the future.\\
+%Prepayment estimates must also be computed.
 
-Finally, it would be desirable to implement an embedded domain-specific language (EDSL) for construction of over-the-counter (OTC) products.
-As OTC products are subject to counterparty risk, this would be another topic to investigate.
+%Cubic splines or Nelson-Siegel method for obtain term structure as a function.
 
-The class hierarchichy should be extended to define interfaces for derivatives, commodities, money markets etc.. Draw diagram?
+Finally, it would be desirable to implement an embedded domain-specific language
+for construction of over-the-counter (OTC) products.
+As OTC products are subject to counterparty risk, this would be another topic
+to investigate.
 
-Alas, our library is missing a key component which is a proper calendar module.
-
-Compute holidays using Easter Sunday
+%The class hierarchichy should be extended to define interfaces for derivatives,
+%commodities, money markets etc.. Draw diagram?
 
 \chapter{Conclusion}
