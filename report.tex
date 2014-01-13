@@ -12,12 +12,14 @@ Sinan Gabel, sinan.gabel@gmail.com
 %
 %--------------------   start of the 'preamble'
 %
+
+\usepackage{tikz}
 \usepackage{graphicx,amssymb,amstext,amsmath,graphics,epsfig,color}
 \usepackage{fancyhdr}
-\usepackage[xindy]{glossaries}
-\usepackage{algorithm}
-\usepackage{algorithmic}
-\usepackage{lmodern,inconsolata}
+\usepackage[toc]{glossaries}
+%\usepackage{algorithm}
+%\usepackage{algorithmic}
+%\usepackage{lmodern,inconsolata}
 \usepackage{array, xcolor, lipsum, bibentry, fancyhdr}
 \usepackage[absolute]{textpos}
 %\usepackage[top=25mm, bottom=25mm, left=22mm, right=22mm]{geometry} %Layout of page
@@ -27,9 +29,16 @@ Sinan Gabel, sinan.gabel@gmail.com
 \usepackage{microtype}
 \usepackage{ctable}
 \usepackage{tikz}
-\usepackage{index}
 \usepackage{listings,setspace,framed}
-\usepackage[toc,acronym]{glossaries} 
+%\usepackage[toc, section, numberline,acronym]{glossaries}
+%\usepackage[toc, section, numberline,acronym]{glossaries}
+
+\usepackage{makeidx}
+\usepackage[intoc]{nomencl}
+
+
+%\usepackage[toc,acronym]{glossaries} 
+
 \makeindex 
 \makeglossaries
 
@@ -219,7 +228,7 @@ We present our project, \textsc{Hiperfit} Quant Library, where we design and dev
 \include{architecture}
 \include{results}
 
-\printglossary
+%\printglossary
 
 \newglossaryentry{computer}
 {
@@ -238,11 +247,16 @@ We present our project, \textsc{Hiperfit} Quant Library, where we design and dev
 
 \printglossary[type=main,title={Glossary},toctitle={Glossary}]
 %In this section the terminology used in the field of fixed income and how it applies to HQL.
-\thispagestyle{empty}\cleardoublepage
-\printglossary[type=\acronymtype,title={List of Abbreviations},toctitle={List of Abbreviations}]
+%\thispagestyle{empty}
+%\cleardoublepage
+%\printglossary[type=\acronymtype,title={List of Abbreviations},toctitle={List of Abbreviations}]
+
+\printindex
+
 
 %-----------------------------------------------------------
 \appendix
+
 \include{app1}
 
 
