@@ -14,6 +14,8 @@ dvi:
 	bibtex ${filename}
 	makeglossaries ${filename}
 	latex ${filename}
+	makeindex ${filename}
+	latex ${filename}
 medit:
 	mate *.tex
 
