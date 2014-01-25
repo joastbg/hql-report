@@ -30,8 +30,11 @@ Sinan Gabel, sinan.gabel@gmail.com
 \usepackage[compatibility=true]{caption} 
 \usepackage{ctable}
 \usepackage{tikz}
+\usepackage{pifont}
 \usepackage{listings,setspace,framed}
 \usepackage{minted}
+\usepackage{slashbox}
+\newcommand{\xmark}{\ding{55}}
 %\usepackage[toc, section, numberline,acronym]{glossaries}
 %\usepackage[toc, section, numberline,acronym]{glossaries}
 
@@ -192,7 +195,7 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 % Title
 \begin{center}
 \HRule \\[0.5cm]
-\huge \bfseries \Title\\[0.5cm]
+\huge \bfseries \Title\\
 \HRule \\[0.5cm]
 
 % Author
@@ -201,10 +204,7 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 %\emph{Authors:}\\
 \textit{Andreas Bock \\ Johan Astborg }\\[3cm]
 
-
 \date{\today}
-
-
 
 % Bottom of the page
 {\today}\\[4cm]
@@ -216,7 +216,9 @@ stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=H
 \end{titlepage}
 %-----------------------------------------------------------
 \begin{abstract}
-
+\begin{center}
+\textbf{Abstract}
+\end{center}
 We present our project, \textsc{Hiperfit} Quant Library, where we design and develop the architecture for a Haskell library for quantitative finance.
 
 \end{abstract}
@@ -233,9 +235,10 @@ We present our project, \textsc{Hiperfit} Quant Library, where we design and dev
 
 \include{intro}
 \include{bg}
-\include{fi}
 \include{architecture}
-\include{results}
+\include{eval}
+\include{futurework}
+\include{conclusion}
 
 %\printglossary
 

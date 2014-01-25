@@ -1,40 +1,32 @@
 \chapter{Introduction}
 
-Our lives becoming increasingly dependent on IT, and as a result, software errors are manifold. The financial sector has a particular low tolerance, as erroneous software may have dire consequences in the form of massive monetary loss.
-The financial crisis of 2008 also caused legislators to take a conservative
-stance on risk (cite), as the collapse on Lehman Brothers reverberated throughout the world's economies.
-Consequently, financial institutions' risk management tools must become more sophisticated, putting stress on the quality of the software.
+Our everyday lives becoming increasingly dependent on IT, and as a result,
+software errors are manifold. The financial sector has a particular low tol-
+erance, as erroneous software may have dire consequences in the form of
+massive monetary loss. Consequently, financial institutions' valuation and risk
+management tools must become more sophisticated, putting stress on the quality
+of the software.\\
 
-We present a prototype Haskell library for valuation of financial products.
+A language that by design allows us to discover a large portion of software
+errors in the compilation phase is therefore preferable in the financial domain.\\
+
+We present the the architecture for a library for quantitative finance. We have
+implemented it using the pure functional programming language Haskell which
+features many attractive properties that steer us toward producing safe and
+correct code.\\
+
+The library is intended to be used for the following purposes:\\
+
+\begin{itemize}
+\item Numerical valuation of financial contracts with closed-form solutions
+\item Simulations and backtesting
+\item Explore and develop new contract types from existing ones
+\item Research and education
+\end{itemize}
+
+By designing and building our software using Haskell, we hope to elim-
+inate some of the unnecessary risk in financial modelling and this project
+will investigate these possibilities.\\
 
 The project was conducted within the \textsc{Hiperfit} research center at the
-University of Copenhagen.
-
-\index{Fourier Series}
-
-Lorem ipsum \gls{bar} \gls{baz} and \gls{foobar}.
-
-\begin{minted}{haskell}
--- Type annotation (optional)
-fib :: Int -> Integer
-
--- With self-referencing data
-fib n = fibs !! n
-        where fibs = 0 : scanl (+) 1 fibs
-        -- 0,1,1,2,3,5,...
-
--- Same, coded directly
-fib n = fibs !! n
-        where fibs = 0 : 1 : next fibs
-              next (a : t@(b:_)) = (a+b) : next t
-
--- Similar idea, using zipWith
-fib n = fibs !! n
-        where fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
-
--- Using a generator function
-fib n = fibs (0,1) !! n
-        where fibs (a,b) = a : fibs (b,a+b)
-\end{minted}
-
-\cite{Haskell}
+University of Copenhagen.\cite{Haskell}

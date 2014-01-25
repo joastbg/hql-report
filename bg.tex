@@ -1,27 +1,68 @@
 \chapter{Background}
 
-A financial security is a tradable legal claim on a firm's asset or income that
-is traded in an organized market [Alexander, Market Risk Analysis]. A portfolio
-is a number of positions in such securities such as long or short positions in equities, bonds and other types of financial instruments. The present value of such a collection can be computed through discounting and credit ratings to reflect the theoretical value they would have if they existed today. This allows investors to assess whether resources could yield higher returns elsewhere.\\
+A financial security is a tradable legal claim on a firm's asset or income 
+that is traded in an organized market [Alexander, Market Risk Analysis].
+A portfolio is  a number of positions in such securities such as long or short 
+positions in equities, bonds and other types of financial instruments. The 
+present value of such a collection can be computed through discounting and 
+credit ratings to  reflect the theoretical value they would have if they 
+existed today. This allows investors to assess whether resources could yield 
+higher returns elsewhere.\\
 
-The time value of money is a concept that allows investors to assess whether an investment is up to par. In essence, it tells us how high a return an investment should yield as a function of the time the resources are tied up.
-Discounting is a method of scaling a future cashflow so as to represent its theoretical value it would have had it existed today.
-As the prevailing interest rate is observable, the time value of money enables the investor to assess whether an investment is up to par. A promise of a payment in the future therefore has to be proportional to what the investor otherwise would have been able to receive in the market.\\
+The time value of money is a concept that allows investors to assess whether an 
+investment is up to par. In essence, it tells us how high a return an 
+investment should yield as a function of the time the resources are tied up.
+Discounting is a method of scaling a future cashflow so as to represent its 
+theoretical value it would have had it existed today.
+As the prevailing interest rate is observable, the time value of money enables 
+the investor to assess whether an investment is up to par. A promise of a 
+payment in the future therefore has to be proportional to what the investor 
+otherwise would have been able to receive in the market.\\
 
-Credit risk is a method of evaluating the creditworthiness of a debitor, i.e. quantifying how likely it is that the counterpart will pay back its debt. This is not considered for exchange-traded products, as losses caused by defaults are covered by the members of the exchange\footnote{We assume that the exchange will not default.}. However, for so-called over-the-counter products (OTC), where two parties enter an agreement, the evaluation of credit risk is critical as the consequences of a default of the counterparty lies solely with the opposing party. Since the financial crisis of 2008 this has become increasingly important for financial institutions [ref], and clearing houses have been established to mitigate the domino effect of collapses of large financial institutions.
-The time value of money and credit risk are two key components allowing investors to gauge whether an investment will be in their favour.\\
+Credit risk is a method of evaluating the creditworthiness of a debitor, i.e. 
+quantifying how likely it is that the counterpart will pay back its debt. This 
+is not considered for exchange-traded products, as losses caused by defaults 
+are covered by the members of the exchange\footnote{If the exchange itself 
+defaults, everyone is royally screwed anyway}. However, for so-called 
+\emph{over-the-counter} products (OTC), where two parties enter an agreement, 
+the evaluation of credit risk is critical as the consequences of a default of 
+the counterparty lies solely with the opposing party. Since the financial 
+crisis of 2008 this has become increasingly important for financial 
+institutions [ref], and clearing houses have been established to mitigate the 
+domino effect of collapses of large financial institutions.
+The time value of money and credit risk are two key components allowing 
+investors to gauge whether an investment will be in their favour.\\
 
-Financial instruments are priced differently, some using closed-form functions and others relying on stochastic simulation, the latter being scoped out of this project.
+Financial instruments are priced differently, some using closed-form functions 
+and others relying on stochastic simulation, the latter being scoped out of 
+this project.\\
 
-We now briefly describe the financial products in the category of fixed income, and we refer appendix A for a more in-depth treatment.
+We now briefly describe the financial products in the category of fixed income, 
+and we refer appendix A for a more in-depth treatment.\\
 
-\section{Related Work}
+- Explain basics of valuation
+- Why this is important
+	- Risky business
+	- Massive loss
 
-In terms of free software, the amount of quantitative finance libraries is limited.
-The most prominent is Quantlib\cite{Ame2003}, an open-source C++ library supporting a wide array of financial products ranging from bonds to more exotic derivatives.
-Hquantlib\cite{hquantlib} is an attempt at a Haskell port of Quantlib under development. It is, however, far from complete.\\
 
-Peyton Jones and Eber developed a combinator library\cite{composingcontracts} allowing users to define virtually any financial contract by means of a compositional denotational semantics \ab{This needs to be more concise, I know}.
+\section{Related work}
 
-Sinan Gabel developed DerivativesExpert\cite{Mathematica:DerivativesExpert}, an
-extension for the Mathematica language for valuation of financial products such as bonds, interest rate derivatives and options. Our project aims to re-engineer a subset of DerivativesExpert (mainly fixed income securities) into Haskell.
+In terms of free software, the amount of quantitative finance libraries is 
+limited.
+The most prominent is Quantlib, an open-source C++ library[ref] supporting a 
+wide array of financial products ranging from bonds to more exotic derivatives.\\
+
+Hquantlib[link] is an attempt at a Haskell port of Quantlib and is under 
+development.\\
+
+Peyton Jones and Eber [ref] developed a combinator library allowing users to 
+define virtually any financial contract by means of a computational 
+denotational semantics (this is wrong, reread article + denotational semanctics 
++ Tacking the Awkward Squad + Composing Contract summary/references).\\
+
+Sinan Gabel developed DerivativesExpert[ref], an extension for Mathematica[ref] 
+for valuation of financial products such as bonds, interest rate derivatives 
+and options. Our project aims to create the core Haskell architecture for 
+valuation of such products and re-engineer a subset of DerivativesExpert, 
+mainly fixed income securities) into Haskell.

@@ -1,89 +1,299 @@
 \chapter{Architecture}
 
-\section{Language}
+In this section we will go through the architecture of HQL and describe how we 
+modelled the complexity of financial instruments. We have ported the 
+We shall introduce the necessary mathematical finance and conventions as we go 
+along.
 
-We have chosen Haskell as modeling language for several reasons. Firstly,
-a pure functional language such as Haskell lends itself well to the domain of
-finance due to its modularity\cite{hughes:matters-cj} and laziness\cite{composingcontracts}[Section 5.3].
-Moreover, the mathematical nature of finance makes functional languages suitable
-due its inherent mathematical foundation.
+\section{Language features}
 
-Secondly, as Haskell is a statically typed language it has the advantage of
-discovering as many errors at compile time as possible, allowing for safer
- code. Additionally, Haskell enables us to overload functionality in our
-programs based on our types. This is a very desirable feature, as we want
- our financial products to have the same API (e.g. a function called
-\texttt{presentValue} should return the present value regardless of the
-product type).
+Functional languages lend themselves well to the domain of finance due
+to several reasons such as modularity\cite{hughes:matters-cj}, 
+laziness\cite{composingcontracts}[Section 5.3]. Moveover, the mathematical
+ nature of finance makes functional languages suitable for valuation due its
+inherent mathematical foundation[ref].\\
 
-\section{Design principles}
+Haskell’s advanced type system helps ensure that your code is safe, and its 
+classes system allows us to define type-safe interfaces for operations on 
+financial products who themselves are represented by Haskell data types. 
+Statically typed languages have the advantage of discovering many errors at 
+compile time, and the type class system enables us to overload functionality in 
+our programs based on our types. This is a very desirable feature, as we want 
+our financial products to have the same API (e.g. a function 
+\texttt{presentValue} should return the present value regardless of the product 
+type).\\
 
-We set out to provide an intuitive user-friendly interface whilst keeping the
-internal valuation engine as simple as possible to cater for transparency of
-the mathematics of finance.
-We now go through the design of the HQL and how we have utilized the features
-of Haskell.
+\section{Interest Rates}
 
-\subsection{Frontend}
+An interest rate is the the amount of return on investing an amount of money 
+for a set amount of time. This can be formulated using a very simple equation, 
+which we will demonstrate with a one year interest on a deposits account (where
+$FV_T$ denotes the future value in $T$ time, $N$ is the nominal and $R_T$ is the
+rate over the period $T$\footnote{$T$ is sometimes referred to as the
+\emph{tenor}.}.):
 
-We use Haskell data types to represent our bonds so that we may make them
-instances of type classes. We refer to figure \emph{X} shows the (inheritance)
-relations as this is best explained pictorially.\ab{Produce a figure when we
-are done with the interface. This section should be straight-forward.}
+\begin{equation}
+FV_T = N (1 + R_T)
+\end{equation}
 
-\subsection{Backend}
+which is a concept which the man on the street can grasp. Extending this to 
+multiple periods we introduce a new concept called compound interest, which is 
+simply the formula above reapplied n times. The intuitive approach is that the 
+compound interest is the return from reinvesting previous interest payments. 
+Mathematically, this return can be formulated as an exponentially compounded 
+interest rate:
 
-% List representation
-As mentioned in chapter \ref{chap:fi}, a bond can be represented as a (possibly
-infinite) list of zero coupon bonds (\texttt{(Date, Cash)} tuples).
-This is precisely the architecture we use to represent the bonds internally, as
-doing so exploits a number of properties of Haskell.\\
+\begin{equation}\label{eq:expcomp}
+FV_T^n = N (1 + R_T)^n
+\end{equation}
 
-Lists are excellent data structures as operations on them (maps and
-folds, for instance) are typically embarassingly parallel. Moreover,
-Haskell's laziness combats the potentially large performance cost involved in
-evaluating a list of payments for a 30 year bond, for instance. In addition,
-the laziness of Haskell also makes it possible to represent a consol bond as
-an infinite list.\\
+where $FV$ is now dependent on the number of time it is compounded.
+While this model is easy to understand, the world of finance demands much more 
+intricate details to correctly understand this model. Firstly, it assumes 
+discrete periods of, but we have not specified if this $n$ stands for days, months, 
+or years, or how what the tenor, $T$, is.\\
 
-% List in valuation
-Another benefit in using a list representation is in valuation. As explained
-in Appendix \emph{X}, discounting requires us knowledge of the prevailing zero
-rates current observable in the market. Given a complete term
-structure, bond valuation becomes a simple \texttt{zipWith (*)} between the list
-of cash amounts and the list of discount factors obtained through the dates of
-the payments. Furthermore, as a term structure returns an interest rate given
-a time to maturity, we can completely avoid the use dates and instead use
-offsets from the present.\\
+Up until this point we have assumed that the compounding is performed at 
+discrete intervals. However, as (1) is simply a formula, we may apply concepts 
+from calculus to achieve what is known as the continuously compounded interest 
+rate. It is defined as the resulting interest rate when we take the limit of 
+equation \ref{eq:expcomp} as $n$ goes to infinity:
 
-The fact that all bonds are valued in the same way results in less boilerplate
-code in the internals, but requires a complete term structure for valuation.
-Section \ref{chap:fw} discusses this decision in detail.
+\begin{equation}\label{eq:expcomp}
+FV_T = N e^{RT}
+\end{equation}
 
-\section{Limitations}
+where $R$ is the continuously compounded interest rate.
 
-Due to the myriad of conventions in finance, it is desirable to have an
-interface that allows the user to only specify a subset of the required
-information for a financial product, and have the the internals default
-to certain value. For instance in the MBO market, the day count convention
-is typically $\frac{30}{360}$ (verify and reference), so it would be 
+The motivation behind the continuously compounded interest rate is that it is much
+"nicer" to work with in more advanced fixed income modelling\cite{cmunk}[Chapter 1]
+and yields almost identical numerical results.\\
 
-In C++, this is achieved through function overloading, which is arguably a
-more elegant interface to exporting Haskell functions that return data types
-with pre-set fields.
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=.7]{comp02.eps}
+\caption{How compounding methods influence returns.}
+\label{fig:comp02}
+\end{figure}
 
-The stickiness of the IO monad poses a problem for currency exchanges.
-Assuming foreign exchange rates can be retrieved from institutions such as
-\href{http://www.bloomberg.com/markets/currencies/}{Bloomberg}, we would 
-have to contaminate the purity of our software with IO. Ideally, we want to
-imbue the internals with implicit currency conversion to accomodate for
-intercurrency swaps. \texttt{unsafePerformIO} could be used to fetch the foreign
-exchange rates, but this introduces more problems e.g. what happens if the
-server we are querying is not live?
-In Scala, we would be able to use the \emph{implicits} construct to perform
-the conversions.
+Figure \ref{fig:comp02} shows the influence in rate as a result of the different
+kinds of compounding. Furthermore, table \ref{tab:cmptable} gives an overview of
+the relation between compounding functions and time steps.It should be evident to 
+the reader that the notion of linear continuously compounded interest rate is 
+absurd, as we derive it from equation \ref{eq:expcomp}.
 
-A \texttt{State}) monad could be a way of solving the problem - we structure
-our program to take a set of recent exchange rates (and other "online"
-information essential to pricing) and performs the computations.
+\begin{center}  
+\begin{longtable}{|r|c|c|}
+\hline  
+\backslashbox{Time}{Function}
+           &Linear  & Exponential\\\hline
+Discrete   & Flat   & Periodic\\\hline
+Continuous & \textcolor{red}{\xmark} & Continouous\\\hline
+\caption{Interest rates and compounding.}
+\end{longtable}
+\label{tab:cmptable}
+\end{center}
 
+Since the method of compounding has a such an impact on the returns, we have
+modelled an \texttt{InterestRate} data structure in Haskell that captures this
+complexity:\\
+
+
+\textbf{CodeListing}\\
+--> Discussion on architecture\\
+--> Type safety in interest rates\\
+
+We refer to the documentation \cite{hqldoc}[Some Section] for an 
+in-depth treatment of the mathematical finance pertaining to interest rates.
+
+\section{Fixed Income}
+
+Now that we have cemented the intricacies of interest rates we will look at 
+where they are applied, namely in which financial instruments.
+
+A bond is a financial security that promises the bond holder a stream of future 
+payments. These play a huge role in the financial markets are are typically 
+only offered by governments or large financial institutions.
+
+We will present our Fixed Income Haskell module by means of a running example. 
+A \emph{serial} is an easy to understand example of a bond that equates to a 
+typical Danish house loan. The cash flow of the holder is depicted in figure
+\ref{fig:serialcf}.\\
+
+\begin{figure}[h!]
+\begin{center}
+\begin{tikzpicture}[-,shorten >=1pt,auto,node distance=1.5cm,thick,minimum size=0.8cm,main node/.style={circle,draw=red,very thick}]
+\tikzstyle{selected edge} = [draw,line width=6pt,-,blue!30]
+
+\coordinate (belowstart) at (0,-1);
+\coordinate (start) at (0,0);
+\coordinate (stop) at (10.2,0);
+\coordinate (abovestop) at (10.2,2);
+\draw (start) -- (stop);
+\draw (start) -- (belowstart);
+\draw (stop) -- (abovestop);
+
+\node at (0, -1.5) () {$t=0$};
+
+\filldraw[draw=black, fill=blue] (2,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=red]  (2,1) rectangle node {} +(0.2,1);
+\node at (2, 2.5) () {$t=2$};
+
+\filldraw[draw=black, fill=blue] (4,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=red]  (4,1) rectangle node {} +(0.2,0.75);
+\node at (4, 2.5) () {$t=4$};
+
+\filldraw[draw=black, fill=blue] (6,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=red]  (6,1) rectangle node {} +(0.2,0.5);
+\node at (6, 2.5) () {$t=6$};
+
+\filldraw[draw=black, fill=blue] (8,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=red]  (8,1) rectangle node {} +(0.2,0.25);
+\node at (8, 2.5) () {$t=8$};
+
+\filldraw[draw=black, fill=blue] (10,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=red]  (10,1) rectangle node {} +(0.2,0.1);
+\node at (10, 2.5) () {$t=10$};
+
+% Legend
+\filldraw[draw=black, fill=blue] (7,-1) rectangle node {} +(0.2,0.2);
+\node at (8.3, -0.92) () {repayment};
+
+\filldraw[draw=black, fill=red] (7,-1.5) rectangle node {} +(0.2,0.2);
+\node at (8, -1.44) () {coupon};
+
+\end{tikzpicture}
+\caption{Cashflow of a serial.}
+\label{fig:serialcf}
+\end{center}
+\end{figure}
+
+We observe that the bond issuer makes fixed size deposits to the counterpart to 
+repay the loan. Since there is no such thing as a free lunch, so-called coupon 
+payments are made in addition to compensate for having its funds tied up. The 
+coupon is a scalar, hence the coupon payments are decreasing as a result of the 
+repayment amortization \cite{hqldoc}[Some Section].\\
+
+Having introduced the basics of bonds we turn to the Haskell modelling aspects 
+of our project. There exist several kinds of bonds in addition to the serial. 
+Therefore it is convenient to model them using a type class, since they share a 
+common interface while differing slightly in their payment streams (an 
+exhaustive list of bond types that HQL supports can be found in the 
+documentation cite{US}[Section CaptainLulz]). The type class hierarchy can be 
+see in figure something:\\
+
+\textbf{CodeListing}
+> Lots of text explaining
+
+
+In addition to the serial, we present the most basic bond imaginable, the zero 
+coupon bond or simply "zero". It is exactly that - a bond with a specified 
+tenor and interest rate that pays a fixed amount at maturity. Its cashflow is a 
+singleton list, which allows us to think of all other bonds as a collection of 
+zero coupon bonds.\\
+
+We raise the following question: how do we determine the price of such a bond, 
+and how is this done in HQL? Before we can answer such a question we have to 
+introduce the concept of the time value of money, motivated by a small example: 
+As we saw in the serial example, the bond holder is compensated for having its 
+funds tied up. The reader should think of coupons as the cash value of the 
+opportunity cost incurred by lending the money to the bond issuer.
+
+\section{Discounting}
+
+The time value of money is a concept that allows investors to assess whether an 
+investment is up to par. In essence, it tells us how high a return an 
+investment should yield as a function of the time the resources are tied up. 
+Discounting is a method of scaling a future cashflow so as to represent its 
+theoretical value it would have had it existed today. As the prevailing 
+interest rate is observable in the market, the time value of money enables the 
+investor to assess whether an investment is up to par. A promise of a payment 
+in the future therefore has to be proportional to what the investor otherwise 
+would have been able to receive in the market.\\
+
+An essentail tenet of our architecture is that we keep the backend/pricing 
+engine as simle as possible and keep the interface detailed and 
+self-explanatory.\\
+
+The fact that we model all bonds as list of zeros allows us to easily discount 
+all bonds in the same manner. A functional programmer will already be thinking 
+of this as a simple \texttt{map}, which is exactly how it is modelled in HQL.\\
+
+The interest rates have hitherto been fixed scalars combined with a compounding 
+method. However, so-called floating rate bonds also exist, where the interest 
+rate is changed at regular intervals according to some entity such as the 
+LIBOR\footnote{Note that floating rate bonds are still considered “fixed 
+income” since the payments still fall on the payment dates regardless of the 
+actual amount.}. The cashflow generation for these bonds relies on simulation, 
+but the discounting is exactly the same as for fixed rate bonds.\\
+
+Finally, a note on terminology. The terms “discounting” and “pricing” 
+may seem equivalent at first glance. The distinction between them is simple, 
+pricing takes into account \emph{credit risk}. \\
+
+Credit risk is a method of evaluating the creditworthiness of a debitor, i.e. 
+quantifying
+how likely it is that the counterpart will pay back its debt. This is not 
+considered for
+exchange-traded products, as losses caused by defaults are covered by the 
+members of the exchange 1 . However, for so-called over-the-counter products 
+(OTC), where two parties enter an agreement, the evaluation of credit risk is 
+critical as the consequences of a default of the counterparty lies solely with 
+the opposing party. Since the financial crisis of 2008 this has become 
+increasingly important for financial institutions [ref], and clearing houses 
+have been established to mitigate the domino effect of collapses of large 
+financial institutions. The time value of money and credit risk are two key 
+components allowing investors to gauge whether an investment will be in their 
+favour.
+
+\section{Term Structure}
+
+A yield curve is a graphical representation of the cash flow of a bond.
+A term structure can be viewed as a function f that given a tenor (also known 
+as the time to maturity) returns an zero rate. The fact that it gives us zero 
+rates make them very valuable tools in finance as we may use them to discount 
+any cashflow regardless how it was generated.
+We present this graphically in figure something for ease of exposition.
+
+The purpose of such a term structure is for investors to look at what price 
+banks are currently willing to loan. We emphasize the time sensitivity of term 
+structures
+
+> CodeListing
+> 	- Analytical
+>	- Classes
+>	- ETC
+
+Due, a term structure is time sensitive and are only valid at the time of 
+construction. We will return to term structure construction in section 
+something.
+
+\section{Options, Futures and other Derivatives}
+
+In this section we describe how our architecture caters to other financial 
+products in addition to the fixed income instruments we have seen.\\
+
+First of all, a natural next step in the development of HQL is the 
+implementation of derivatives which is itself a product relying on another- the 
+\emph{underlying} - hence the the name. An example of this is 
+a forward-rate agreement, the simplest being an agreement where two parties 
+agree on a future trade of a commodity. It should be obvious that the price of 
+the underlying directly affects the value of having entered such an agreement.\\
+
+However, with the addition of floating rate bonds, we may model fixed income 
+derivatives such as swaps. A swap is contract in which two counterparties agree 
+to exchange two cashflows.
+
+%Fixed
+%Floating
+%Fixed
+%Inter-currency
+%Vanilla
+%Floating
+%Vanilla
+
+There are two obvious ways in which we can extend HQL with interest rate 
+derivatives support. For instance, swaps can be modelled by combining a fixed 
+and a floating leg, the latter still not yet being supported. On the other 
+hand, it could be built as a list of forward-rate agreements (make sure this is 
+explained above, or refer to Appendix) between the two parties in question.
