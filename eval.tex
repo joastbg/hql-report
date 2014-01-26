@@ -1,0 +1,53 @@
+\chapter{Evaluation}
+
+\section{Architecture}
+
+We have attempted to develop an architecture that Haskell's type system.
+
+We have successfully designed and implemented the foundation for a valuation 
+library in Haskell. We have implemented the scaffolding required for valuation, 
+namely a calendar module, day-count conventions, currency support, interest 
+rates and term structures. Moreover, we have also implemented a fixed income 
+module which we have used as an example throughout this report.
+
+\section{Precision and Symbolic Computations}
+
+We currently use Haskell’s \texttt{Double} datatype to 
+Ideally HQL should be extended to use the \texttt{IEEE754} package for floating 
+points, as it correctly addresses the problems regard comparisons of doubles.
+
+\section{Limitations}
+
+We now point out the limitations that the Haskell language and our architecture 
+has imposed.
+
+First we point out the limitations that our choice of language has imposed.
+Haskell’s type system is a double-edged sword which becomes explitic as soon 
+as we need to do introduce \emph{impure} code - namely the \texttt{IO} monad.
+
+For instance, to model inter-currency swaps we need to retrieve the exchange 
+rate at the exact moment when the transaction is done. Retrieving this 
+information is impure, as it is an external to the Haskell runtime. In Java, a 
+programmer would wrap such a query in a try-catch and not think twice about it, 
+but we do not have this luxury in Haskell due to the stickiness of the 
+\texttt{IO} monad. One option is to use \texttt{unsafePerformIO} - but this is 
+infeasible for SOME reasons.
+Instead we can wrap our models in a monad that will perform the necessary 
+computations when given an environment. This solution may also be used to 
+retrieve market data and bootstrap a termstructure internally.
+
+%Moreover, Haskell’s type system has not provided us with an elegant solution 
+%for representation of currencies.
+
+%GADT/Type families etc are not suited for representing Currency type 
+%with the properties we wanted (+,*,/, etc)
+
+%Due to the myriad of conventions in finance, it is desirable to have an 
+%interface that allows the user to only specify a subset of the required 
+%information for a financial product, and have the the internals default to 
+%certain value. For instance in the MBO market, the day count convention is 
+%typically 30/360 (verify and reference), so it would be nice to have 
+
+%In C++, this is achieved through function overloading, which is arguably a more 
+%elegant interface to exporting Haskell functions that return data types with 
+%pre-set fields.
