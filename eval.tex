@@ -1,8 +1,9 @@
 \chapter{Evaluation}
 
-\section{Architecture}
+We now assess the quality of our library and address the limitations that we
+have encountered throughout the course of the project.
 
-We have attempted to develop an architecture that Haskell's type system.
+\section{Architecture}
 
 We have successfully designed and implemented the foundation for a valuation 
 library in Haskell. We have implemented the scaffolding required for valuation, 
@@ -10,19 +11,10 @@ namely a calendar module, day-count conventions, currency support, interest
 rates and term structures. Moreover, we have also implemented a fixed income 
 module which we have used as an example throughout this report.
 
-\section{Precision and Symbolic Computations}
+\section{Language limitations}
 
-We currently use Haskell’s \texttt{Double} datatype to 
-Ideally HQL should be extended to use the \texttt{IEEE754} package for floating 
-points, as it correctly addresses the problems regard comparisons of doubles.
-
-\section{Limitations}
-
-We now point out the limitations that the Haskell language and our architecture 
-has imposed.
-
-First we point out the limitations that our choice of language has imposed.
-Haskell’s type system is a double-edged sword which becomes explitic as soon 
+First we point out the limitations in terms of the choice of language.
+Haskell's type system is a double-edged sword which becomes explitic as soon 
 as we need to do introduce \emph{impure} code - namely the \texttt{IO} monad.
 
 For instance, to model inter-currency swaps we need to retrieve the exchange 
@@ -31,10 +23,20 @@ information is impure, as it is an external to the Haskell runtime. In Java, a
 programmer would wrap such a query in a try-catch and not think twice about it, 
 but we do not have this luxury in Haskell due to the stickiness of the 
 \texttt{IO} monad. One option is to use \texttt{unsafePerformIO} - but this is 
-infeasible for SOME reasons.
+infeasible as it would introduce impurity into our code.
 Instead we can wrap our models in a monad that will perform the necessary 
 computations when given an environment. This solution may also be used to 
 retrieve market data and bootstrap a termstructure internally.
+
+Also, we currently use Haskell's \texttt{Double} datatype to 
+Ideally HQL should be extended to use the \href{https://hackage.haskell.org/package/data-binary-ieee754}{\texttt{IEEE754}} package for floating 
+points, as it correctly addresses the problems regard comparisons of 
+doubles described in \cite{blogpost}.
+
+\section{Limitations}
+
+We now point out the limitations that the Haskell language and our architecture 
+have imposed.
 
 %Moreover, Haskell’s type system has not provided us with an elegant solution 
 %for representation of currencies.

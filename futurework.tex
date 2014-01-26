@@ -1,47 +1,64 @@
 \chapter{Future Work}
 
-As we set out to design the architecture of HQL, our project is naturally far 
-from a fully-fledged library, and many more modules must be added.\\
+As we set out to design the architecture of \hql, our project is naturally far 
+from a fully-fledged library, and many more modules must be added. Below we
+describe the next steps that should be taken in the development of \hql.
+
+\section{Floating rates}
 
 First of all we do not have support for the ubiquitous floating-rate bonds, 
-where we must rely on Monte Carlo simulations for valuation.
+where we must rely on Monte Carlo simulations for valuation. Haskell's 
+\texttt{State} monad provides an excellent interface for a \texttt{Simulation}
+type for stochastic processes, which are typically used in pricing floating
+rate bonds that use LIBOR. We present a small proof of concept of a brownian
+motion process using a\href{http://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform}{Box-Muller} transform:
+
+\ab{Find something more suitable than Wikipedia...}
+
+\begin{hscode}
+type Simulation = State StdGen -- abstract away random number generator
+
+randomUnit :: Simulation Double
+randomUnit = do
+               gen <- get
+               let (v,gen') = randomR (0::Double, 1::Double) gen
+               put gen'
+               return v
+
+boxMuller :: Simulation Double
+boxMuller = do
+  u0 <- randomUnit
+  return $ transform u0 u0
+  where transform x y = sqrt(-2*log x)*cos(2*pi*y)
+
+-- | A standard Brownian motion
+sbm :: Simulation [Double]
+sbm = sequence $ repeat boxMuller
+\end{hscode}
+
+\section{Fixed Income Derivatives}
 
 A natural next step would then be to implement interest rate derivatives such 
-as swaps, caps, floors.
-There are two obvious ways in which we can extend HQL with interest rate 
+as swaps. There are two obvious ways in which we can extend \hql with interest rate 
 derivatives support. For instance, swaps can be modelled by combining a fixed 
 and a floating leg. On the other hand, it also could be constructed as a list of 
 forward-rate agreements between the two parties in question.\\
 
 \ab{Make sure forward-rate agreements are explained above!}
 
-Also, our calendar module needs to be revised as we currently interpolate 
-payment dates using the settlement date, maturity and the desired amount of 
-settlements per year. However, this is too lax a method, since most standard 
-products have set payment patterns. Interpolation is bordering on OTC products.
-Moreover, HQL currently assumes that all weekdays are valid payments dates. 
-This doesn’t cater to local holidays (e.g. Store Bededag in Denmark). A 
-solution is to compute these holidays using offsets from Easter Sunday, 
-alleviating the need to store them statically.\\
-
-Another interesting extension is to implement a way of generating yield curves 
-from portfolios using bootstrapping or interpolation\cite{cmunk}.
-This would allow users to import data from external sources large financial
-institutions such as \href{www.bloomberg.com}{Bloomberg} or
-\href{www.reuters.com}{Reuters}, and build curves in HQL for bond valuation.\\
+\section{Mortgage-backed Obligations}
 
 Support for mortgage-backed bonds is also missing in our library. We provide an 
 \texttt{MBO} class so that passthroughs or subprimes can share a common interface.
-\hql should also be extended so as to allow prepayment estimates to be computed.\\
+However, the data structures and functionality are missing and should be 
+implemented. \hql should also be extended so as to allow prepayment estimates to
+be computed.
 
-Regarding term structures, \cite{cmunk} defines several methods of approximating
-a term structure by means of cubic splines or the Nelson-Siegel method. An 
-interesting project could set out to investigate the feasibility of added such 
-functionality to \hql.
+\section{OTC products}
 
-Finally, it would be desirable to implement an embedded domain-specific 
-language (EDSL) for construction of OTC products.
-As OTC products are subject to counterparty risk, this would be another topic 
+It would be desirable to implement an embedded domain-specific 
+language (EDSL) for construction of OTC products. As OTC products are
+subject to counterparty risk, this would be another topic 
 to investigate.
 
 \section{Bootstrapping}
@@ -49,10 +66,37 @@ to investigate.
 So far we have seen how to generate cashflows and how to obtain their 
 discounted values. However, this is preconditioned on the fact that we aldready 
 have a term structure available. This begs the question, how do we construct 
-such a term structure if all we have is a set of yield curves who’s yields 
+such a term structure if all we have is a set of yield curves who's yields 
 are inherently dependent on the given instrument we wish to price?
 Bootstrapping is method of generating such a term structure from the yield 
 curves, making it possible to discount any cash flow according to the 
 prevailing interest rates.
-This requires the design of an algorithm
 \cite{HULL} provides excellent description of how bootstrapping is performed.
+
+Regarding term structures, Munk\cite{cmunk} presents several methods of 
+approximating
+a term structure by means of cubic splines or the Nelson-Siegel method. An 
+interesting project could set out to investigate the feasibility of added such 
+functionality to \hql.
+
+Another interesting extension is to implement a way of generating yield curves 
+from portfolios using bootstrapping or interpolation\cite{cmunk}.
+This would allow users to import data from external sources large financial
+institutions such as \href{www.bloomberg.com}{Bloomberg} or
+\href{www.reuters.com}{Reuters}, and build curves in HQL for bond valuation.\\
+
+\section{Dates, dates, dates}
+
+Our calendar module needs to be revised as we currently interpolate 
+payment dates using the settlement date, maturity and the desired amount of 
+settlements per year. However, this is too lax a method, since most standard 
+products have set payment patterns. A way of extending this could be to make
+the interface stricter so that users must specify a standard payment 
+structure or define their bond as an OTC product.
+\ab{Can we find a few examples? (Sinan?)}
+
+Moreover, \hql currently assumes that all weekdays are valid payments dates. 
+This doesn’t cater to local holidays (e.g. \emph{Store Bededag} in Denmark). A 
+solution is to compute these holidays using offsets from Easter Sunday, 
+alleviating the need to store them statically.\\
+
