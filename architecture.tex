@@ -1,9 +1,8 @@
 \chapter{Architecture}
 
-In this section we will go through the architecture of HQL and describe how we 
-modelled the complexity of financial instruments. We have ported the 
-We shall introduce the necessary mathematical finance and conventions as we go 
-along.
+In this section we will go through the architecture of HQL and describe how we
+modelled the various of financial instruments in Haskell. We shall introduce
+the necessary mathematical finance and conventions as we go along.
 
 \section{Language features}
 
@@ -11,15 +10,15 @@ Functional languages lend themselves well to the domain of finance due
 to several reasons such as modularity\cite{hughes:matters-cj}, 
 laziness\cite{composingcontracts}[Section 5.3]. Moveover, the mathematical
  nature of finance makes functional languages suitable for valuation due its
-inherent mathematical foundation[ref].\\
+inherent mathematical foundation.\\
 
-Haskell’s advanced type system helps ensure that your code is safe, and its 
+Haskell's advanced type system helps ensure that your code is safe, and its 
 classes system allows us to define type-safe interfaces for operations on 
 financial products who themselves are represented by Haskell data types. 
-Statically typed languages have the advantage of discovering many errors at 
-compile time, and the type class system enables us to overload functionality in 
-our programs based on our types. This is a very desirable feature, as we want 
-our financial products to have the same API (e.g. a function 
+Statically typed languages have the advantage of discovering a multitude of
+errors at compile time, and the type class system enables us to overload 
+functionality in our programs based on our types. This is a very desirable
+feature, as we want our financial products to have the same API (e.g. a function 
 \texttt{presentValue} should return the present value regardless of the product 
 type).\\
 
@@ -38,10 +37,10 @@ FV_T = N (1 + R_T)
 
 which is a concept which the man on the street can grasp. Extending this to 
 multiple periods we introduce a new concept called compound interest, which is 
-simply the formula above reapplied n times. The intuitive approach is that the 
-compound interest is the return from reinvesting previous interest payments. 
-Mathematically, this return can be formulated as an exponentially compounded 
-interest rate:
+simply the formula above reapplied a number times. The intuitive approach is
+that the compound interest is the return from reinvesting previous interest 
+payments. Mathematically, this return can be formulated as an exponentially 
+compounded interest rate:
 
 \begin{equation}\label{eq:expcomp}
 FV_T^n = N (1 + R_T)^n
@@ -49,9 +48,9 @@ FV_T^n = N (1 + R_T)^n
 
 where $FV$ is now dependent on the number of time it is compounded.
 While this model is easy to understand, the world of finance demands much more 
-intricate details to correctly understand this model. Firstly, it assumes 
-discrete periods of, but we have not specified if this $n$ stands for days, months, 
-or years, or how what the tenor, $T$, is.\\
+intricate details to correctly understand it. Firstly, it assumes 
+discrete periods of, but we have not specified if this $n$ stands for days, 
+months, or years, or how what the tenor is.\\
 
 Up until this point we have assumed that the compounding is performed at 
 discrete intervals. However, as (1) is simply a formula, we may apply concepts 
@@ -65,9 +64,9 @@ FV_T = N e^{RT}
 
 where $R$ is the continuously compounded interest rate.
 
-The motivation behind the continuously compounded interest rate is that it is much
-"nicer" to work with in more advanced fixed income modelling\cite{cmunk}[Chapter 1]
-and yields almost identical numerical results.\\
+The motivation behind the continuously compounded interest rate is that it is
+much nicer to work with in more advanced fixed income modelling
+\cite{cmunk}[Chapter 1] and yields almost identical numerical results.\\
 
 \begin{figure}[!htb]
 \centering
@@ -95,13 +94,37 @@ Continuous & \textcolor{red}{\xmark} & Continouous\\\hline
 \end{center}
 
 Since the method of compounding has a such an impact on the returns, we have
-modelled an \texttt{InterestRate} data structure in Haskell that captures this
-complexity:\\
+modelled an \texttt{InterestRate} class that captures this
+complexity:
 
+\begin{hscode}
+class InterestRate r where
+  -- | Returns the corresponding continuously compounded rate
+  continuousRate :: r -> ContinuousRate
+  -- | Returns the discount factor at an offset
+  discountFactor :: r -> Offset -> DiscountFactor 
+  -- | Reciprocal of the discount factor
+  compoundFactor :: r -> Offset -> DiscountFactor 
+  -- | Annualize the rate
+  annualize      :: r -> ZeroRate
+  -- | Get the intrinsic rate
+  rate           :: r -> Rate
+\end{hscode}
 
-\textbf{CodeListing}\\
---> Discussion on architecture\\
---> Type safety in interest rates\\
+It defines an interface for \\
+
+The different compounding methods shown in table \ref{tab:cmptable} is
+reflected in the following types:
+
+\begin{hscode}
+newtype ContinuousRate = ContinuousRate Rate deriving (Show)
+newtype ZeroRate       = ZeroRate Rate deriving (Show)
+data ExponentialRate   = ExponentialRate Rate Frequency deriving (Show)
+\end{hscode}
+
+Using the Haskell type system we can make sure that a continuously compounded
+rate is not mistakenly used in a function that expects a zero rate.
+Note that \texttt{newtype} does not exacerbate overhead.\\
 
 We refer to the documentation \cite{hqldoc}[Some Section] for an 
 in-depth treatment of the mathematical finance pertaining to interest rates.
@@ -109,16 +132,19 @@ in-depth treatment of the mathematical finance pertaining to interest rates.
 \section{Fixed Income}
 
 Now that we have cemented the intricacies of interest rates we will look at 
-where they are applied, namely in which financial instruments.
+where they are applied, namely in which financial instruments. In this section
+we will go through how we have modelled the subset of products called 
+\emph{fixed income}.\\
 
-A bond is a financial security that promises the bond holder a stream of future 
-payments. These play a huge role in the financial markets are are typically 
-only offered by governments or large financial institutions.
+In fixed income, a bond is a financial security that promises the bond holder a
+stream of future payments. These play a huge role in the financial markets are
+are typically only offered by governments or large financial institutions.\\
 
-We will present our Fixed Income Haskell module by means of a running example. 
+We will present our \texttt{FixedIncome} module by means of a running example
+of a bond. 
 A \emph{serial} is an easy to understand example of a bond that equates to a 
-typical Danish house loan. The cash flow of the holder is depicted in figure
-\ref{fig:serialcf}.\\
+typical Danish house loan. The cash flow of the holder of a 5 year serial with
+annual repayments is depicted in figure \ref{fig:serialcf}.\\
 
 \begin{figure}[h!]
 \begin{center}
@@ -137,23 +163,23 @@ typical Danish house loan. The cash flow of the holder is depicted in figure
 
 \filldraw[draw=black, fill=blue] (2,0) rectangle node {} +(0.2,1);
 \filldraw[draw=black, fill=red]  (2,1) rectangle node {} +(0.2,1);
-\node at (2, 2.5) () {$t=2$};
+\node at (2, 2.5) () {$t=1$};
 
 \filldraw[draw=black, fill=blue] (4,0) rectangle node {} +(0.2,1);
 \filldraw[draw=black, fill=red]  (4,1) rectangle node {} +(0.2,0.75);
-\node at (4, 2.5) () {$t=4$};
+\node at (4, 2.5) () {$t=2$};
 
 \filldraw[draw=black, fill=blue] (6,0) rectangle node {} +(0.2,1);
 \filldraw[draw=black, fill=red]  (6,1) rectangle node {} +(0.2,0.5);
-\node at (6, 2.5) () {$t=6$};
+\node at (6, 2.5) () {$t=3$};
 
 \filldraw[draw=black, fill=blue] (8,0) rectangle node {} +(0.2,1);
 \filldraw[draw=black, fill=red]  (8,1) rectangle node {} +(0.2,0.25);
-\node at (8, 2.5) () {$t=8$};
+\node at (8, 2.5) () {$t=4$};
 
 \filldraw[draw=black, fill=blue] (10,0) rectangle node {} +(0.2,1);
 \filldraw[draw=black, fill=red]  (10,1) rectangle node {} +(0.2,0.1);
-\node at (10, 2.5) () {$t=10$};
+\node at (10, 2.5) () {$t=5$};
 
 % Legend
 \filldraw[draw=black, fill=blue] (7,-1) rectangle node {} +(0.2,0.2);
@@ -173,33 +199,33 @@ repay the loan. Since there is no such thing as a free lunch, so-called coupon
 payments are made in addition to compensate for having its funds tied up. The 
 coupon is a scalar, hence the coupon payments are decreasing as a result of the 
 repayment amortization \cite{hqldoc}[Some Section].\\
-
-Having introduced the basics of bonds we turn to the Haskell modelling aspects 
-of our project. There exist several kinds of bonds in addition to the serial. 
-Therefore it is convenient to model them using a type class, since they share a 
-common interface while differing slightly in their payment streams (an 
-exhaustive list of bond types that HQL supports can be found in the 
-documentation cite{US}[Section CaptainLulz]). The type class hierarchy can be 
-see in figure something:\\
-
-\textbf{CodeListing}
-> Lots of text explaining
-
-
 In addition to the serial, we present the most basic bond imaginable, the zero 
-coupon bond or simply "zero". It is exactly that - a bond with a specified 
-tenor and interest rate that pays a fixed amount at maturity. Its cashflow is a 
-singleton list, which allows us to think of all other bonds as a collection of 
-zero coupon bonds.\\
+coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified 
+tenor and interest rate that pays a fixed amount at maturity. As instruments and
+bonds come in multiple flavours we have designed a type class hiearchy to model
+the complexity as :
+
+\begin{figure}[!htb]
+\centering
+%\includegraphics[scale=.7]{images/comp02.eps}
+\texttt{images/tcarch.png}
+\caption{Type class architecture.}
+\label{fig:comp02}
+\end{figure}
 
 We raise the following question: how do we determine the price of such a bond, 
-and how is this done in HQL? Before we can answer such a question we have to 
+and how is this done in \hql? Before we can answer such a question we have to 
 introduce the concept of the time value of money, motivated by a small example: 
 As we saw in the serial example, the bond holder is compensated for having its 
 funds tied up. The reader should think of coupons as the cash value of the 
 opportunity cost incurred by lending the money to the bond issuer.
 
 \section{Discounting}
+
+So far we have seen that Haskell's class system permits us to organize the 
+different components and relations.
+
+A quantitative finance library must how bonds are \hql defines
 
 The time value of money is a concept that allows investors to assess whether an 
 investment is up to par. In essence, it tells us how high a return an 
@@ -245,6 +271,31 @@ have been established to mitigate the domino effect of collapses of large
 financial institutions. The time value of money and credit risk are two key 
 components allowing investors to gauge whether an investment will be in their 
 favour.
+
+------------
+
+The cashflow of a bond (as shown in figure \ref{fig:serialcf}) can be 
+represented by a list of payments, and since the cashflow of a zero is simply
+a singleton list we may think of other bonds as a list of zero coupon bonds.
+The backend of \hql relies heavily on this premise, and it allows 
+
+The cashflow of a zero is therefore a singleton list.
+
+how the backend
+architecture of \hql relies on
+
+Its cashflow is a singleton list, which allows us to think of all other bonds
+as a collection of zero coupon bonds.\\
+
+There exist several kinds of bonds in addition to the serial, \textsc{HQL}
+
+Having introduced the basics of bonds we turn to the Haskell modelling aspects 
+of our project. Therefore it is convenient to model them using a type class, since they share a 
+
+\textbf{CodeListing}
+> Lots of text explaining
+
+
 
 \section{Term Structure}
 

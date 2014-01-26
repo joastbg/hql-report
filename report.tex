@@ -66,24 +66,24 @@ Sinan Gabel, sinan.gabel@gmail.com
 \renewcommand{\bibname}{References}
 \makeglossaries
 
+\newminted{hs}{mathescape,
+linenos,
+numbersep=5pt,
+gobble=0,
+frame=lines,
+framesep=2mm}
+
 % Comments
 \newcommand{\comm}[2]{{\sf \(\spadesuit\){\bf #1: }{\rm \sf #2}\(\spadesuit\)}}
 \newcommand{\mcomm}[2]{\marginpar{\scriptsize \comm{#1}{#2}}}
 \newcommand{\ab}[1]{\mcomm{AB}{#1}}
 \newcommand{\ja}[1]{\mcomm{JA}{#1}}
+\newcommand{\hql}{\textsc{HQL} }
 
 %% Glossaries
 \usepackage[T1]{fontenc} % font
 \setlength{\parindent}{0in}
 \definecolor{lightgray}{rgb}{0.9,0.9,0.9}
-
-\newenvironment{filecode}[1][]
-{\minipage{\linewidth}
-\lstset{basicstyle=\ttfamily\footnotesize,frame=single,
-numberstyle=\small\color{black},keywordstyle=\color{black},commentstyle=\color{black},
-stringstyle=\color{black},tabsize=2,backgroundcolor=\color{lightgray},language=Haskell,#1}}
-{\endminipage}
-\renewcommand*\rmdefault{ppl}
 
 %\pagestyle{fancy}
 %\fancyhf{} 
