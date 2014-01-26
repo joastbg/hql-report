@@ -213,7 +213,21 @@ would have been able to receive in the market.\\
 
 An essentail tenet of our architecture is that we keep the backend/pricing 
 engine as simle as possible and keep the interface detailed and 
-self-explanatory.\\
+self-explanatory. The process of discounting can be seen as taking the dot product
+between the discount factors and the cash flows at each point in time,
+
+\[
+p(0) = \mathbf{df}\cdot\mathbf{cf}
+\]
+
+Where the vector of discount factors, $\mathbf{df}$, and cash flow vector, $\mathbf{cf}$ are represented as
+
+\[
+\mathbf{df} = (p(t,T_1), ..., p(t,T_n)),
+\]
+\[
+\mathbf{cf} = (c_1, ..., c_i).
+\]
 
 The fact that we model all bonds as list of zeros allows us to easily discount 
 all bonds in the same manner. A functional programmer will already be thinking 
