@@ -250,27 +250,27 @@ For example, if we were to calculate the present value of a series of future cas
 
 	The above calculation is done in HQL using the function \textit{zipWith} taking the discount function and the list of future cash flows as arguments.
 	\vskip 0.5\FrameSep
-	\begin{minted}{haskell}
-	zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
-	\end{minted}
+	\begin{lstlisting}
+	HQL> zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
+	\end{lstlisting}
 	\vskip 0.5\FrameSep
 	yields the following output:
 	\vskip 0.5\FrameSep
-	\begin{minted}{haskell}
+	\begin{lstlisting}[style=Output]
 	[951.229424500714,1357.2561270539393,860.7079764250578,1637.4615061559637]
-	\end{minted}
+	\end{lstlisting}
 	\vskip 0.5\FrameSep
 	A slightly modified version will return the sum of the cash flows. This is the basis of bond pricing, which is covered in section \nameref{sec:fi}.
 	\vskip 0.5\FrameSep
-	\begin{minted}{haskell}
-	sum $ zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
-	\end{minted}
+	\begin{lstlisting}
+	HQL> sum $ zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
+	\end{lstlisting}
 	\vskip 0.5\FrameSep
 	yields the following output:
 	\vskip 0.5\FrameSep
-	\begin{minted}{haskell}
+	\begin{lstlisting}[style=Output]
 	4806.655034135675
-	\end{minted}
+	\end{lstlisting}
 
 The interest rates have hitherto been fixed scalars combined with a compounding 
 method. However, so-called floating rate bonds also exist, where the interest 
