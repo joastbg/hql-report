@@ -233,6 +233,45 @@ The fact that we model all bonds as list of zeros allows us to easily discount
 all bonds in the same manner. A functional programmer will already be thinking 
 of this as a simple \texttt{map}, which is exactly how it is modelled in HQL.\\
 
+For example, if we were to calculate the present value of a series of future cash flows,
+	\[
+	\mathbf{cf} = (\$1000.00,\$1500.00,\$1000.00,\$2000.00)
+	\]
+	We can multiply by the discount function with $T_n=n$ years and the rate at 5.00\% continuously compounded,
+	\[
+	p(0) = \mathbf{df}\cdot\mathbf{cf} = (e^{-rT_1},...,e^{-rT_n})\cdot(p(0,T_1), ...,p(0,T_4))=
+	\]
+	\[
+	(e^{-0.05\cdot1},e^{-0.05\cdot2},e^{-0.05\cdot3},e^{-0.05\cdot4}) \cdot (\$1000.00,\$1500.00,\$1000.00,\$2000.00)=
+	\]
+	\[
+	(\$951.23,\$1357.26,\$860.71,\$1637.46)
+	\]
+
+	The above calculation is done in HQL using the function \textit{zipWith} taking the discount function and the list of future cash flows as arguments.
+	\vskip 0.5\FrameSep
+	\begin{listing}
+	zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
+	\end{listing}
+	\vskip 0.5\FrameSep
+	yields the following output:
+	\vskip 0.5\FrameSep
+	\begin{listing}[style=Output]
+	[951.229424500714,1357.2561270539393,860.7079764250578,1637.4615061559637]
+	\end{listing}
+	\vskip 0.5\FrameSep
+	A slightly modified version will return the sum of the cash flows. This is the basis of bond pricing, which is covered in section \nameref{sec:fi}.
+	\vskip 0.5\FrameSep
+	\begin{listing}
+	sum $ zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
+	\end{listing}
+	\vskip 0.5\FrameSep
+	yields the following output:
+	\vskip 0.5\FrameSep
+	\begin{listing}[style=Output]
+	4806.655034135675
+	\end{listing}
+
 The interest rates have hitherto been fixed scalars combined with a compounding 
 method. However, so-called floating rate bonds also exist, where the interest 
 rate is changed at regular intervals according to some entity such as the 
