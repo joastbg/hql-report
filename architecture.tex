@@ -10,11 +10,11 @@ Functional languages lend themselves well to the domain of finance due
 to several reasons such as modularity\cite{hughes:matters-cj}, 
 laziness\cite{composingcontracts}[Section 5.3]. Moveover, the mathematical
  nature of finance makes functional languages suitable for valuation due its
-inherent mathematical foundation.\\
+inherent mathematical foundation and purity.\\
 
 Haskell's advanced type system helps ensure that your code is safe, and its 
-classes system allows us to define type-safe interfaces for operations on 
-financial products who themselves are represented by Haskell data types. 
+class system allows us to define type-safe interfaces for operations on 
+financial products who themselves can be represented by Haskell data types. 
 Statically typed languages have the advantage of discovering a multitude of
 errors at compile time, and the type class system enables us to overload 
 functionality in our programs based on our types. This is a very desirable
@@ -24,22 +24,23 @@ type).\\
 
 \section{Interest Rates}
 
-An interest rate is the the amount of return on investing an amount of money 
-for a set amount of time. This can be formulated using a very simple equation, 
-which we will demonstrate with a one year interest on a deposits account (where
-$FV_T$ denotes the future value in $T$ time, $N$ is the nominal and $R_T$ is the
-rate over the period $T$\footnote{$T$ is sometimes referred to as the
-\emph{tenor}.}.):
+We begin our introduction to mathematical finance with a concept familiar to
+most, name interest rates. An interest rate is the the amount of return on
+investing an amount of money for a set amount of time. This can be formulated
+using a very simple equation, which we will demonstrate with a one year interest
+rate on a deposits account:
 
 \begin{equation}
 FV_T = N (1 + R_T)
 \end{equation}
 
-which is a concept which the man on the street can grasp. Extending this to 
-multiple periods we introduce a new concept called compound interest, which is 
-simply the formula above reapplied a number times. The intuitive approach is
-that the compound interest is the return from reinvesting previous interest 
-payments. Mathematically, this return can be formulated as an exponentially 
+where $FV_T$ denotes the future value in $T$ time, $N$ is the nominal and $R_T$
+is the rate over the period $T$\footnote{$T$ is also referred to as the
+\emph{tenor}.}.) Extending this to multiple years (or periods) we introduce a new 
+concept called compound interest, which is  simply the formula above reapplied
+a number times. The intuitive approach is
+that the compound interest is the return from reinvesting previously invested
+capital. Mathematically, this return can be formulated as an exponentially 
 compounded interest rate:
 
 \begin{equation}\label{eq:expcomp}
@@ -49,8 +50,9 @@ FV_T^n = N (1 + R_T)^n
 where $FV$ is now dependent on the number of time it is compounded.
 While this model is easy to understand, the world of finance demands much more 
 intricate details to correctly understand it. Firstly, it assumes 
-discrete periods of, but we have not specified if this $n$ stands for days, 
-months, or years, or how what the tenor is.\\
+discrete time periods, but we have not specified if this $n$ stands for days, 
+months, or years, or how what the tenor is. All of these intricacies are critical
+for correctness of \hql and must be accounted for in the implementation.\\
 
 Up until this point we have assumed that the compounding is performed at 
 discrete intervals. However, as (1) is simply a formula, we may apply concepts 
@@ -59,7 +61,8 @@ rate. It is defined as the resulting interest rate when we take the limit of
 equation \ref{eq:expcomp} as $n$ goes to infinity:
 
 \begin{equation}\label{eq:expcomp}
-FV_T = N e^{RT}
+\text{lim}_{n \rightarrow \infty}\; FV_T^n \; = \; N (1 + R_T)^n
+= N e^{RT}
 \end{equation}
 
 where $R$ is the continuously compounded interest rate.
@@ -93,11 +96,27 @@ Continuous & \textcolor{red}{\xmark} & Continouous\\\hline
 \label{tab:cmptable}
 \end{center}
 
-Since the method of compounding has a such an impact on the returns, we have
-modelled an \texttt{InterestRate} class that captures this
-complexity:
+We see that the method of compounding has very distinct impact on the returns.
+From a modelling perspective, this means that we have designed Haskell
+data types to distinguish between interest rates differing in the compound
+method as follows:
 
 \begin{hscode}
+type Rate = Double
+newtype ContinuousRate = ContinuousRate Rate deriving (Show)
+newtype SimpleRate     = SimpleRate Rate deriving (Show) -- zero rate
+data ExponentialRate   = ExponentialRate Rate Frequency deriving (Show)
+\end{hscode}
+
+Using the Haskell type system we can make sure that a continuously compounded
+rate is not mistakenly used in a function that expects a zero rate.
+Note that \texttt{newtype} does not exacerbate overhead.\\
+Wishing to unify these different kinds of rates we have modelled an
+\texttt{InterestRate} class that allows for abstraction of the underlying rate.
+
+\begin{hscode}
+type Offset         = Double -- yearly offset
+type DiscountFactor = Double
 class InterestRate r where
   -- | Returns the corresponding continuously compounded rate
   continuousRate :: r -> ContinuousRate
@@ -109,33 +128,27 @@ class InterestRate r where
   rate           :: r -> Rate
 \end{hscode}
 
-It defines an interface for \\
+It defines an interface for retrieval of rates regardless of the underlying
+data type. We often work with continuously compounded rates in options 
+pricing\cite{HULL}, hence the \texttt{continuousRate} function. The
+\texttt{discountFactor} function is explained in detail in section
+\ref{sec:discounting}.
 
-The different compounding methods shown in table \ref{tab:cmptable} is
-reflected in the following types:
+\ab{This needs a bit more explanation}
 
-\begin{hscode}
-type Rate = Double
-newtype ContinuousRate = ContinuousRate Rate deriving (Show)
-newtype ZeroRate       = ZeroRate Rate deriving (Show)
-data ExponentialRate   = ExponentialRate Rate Frequency deriving (Show)
-\end{hscode}
+We refer to the documentation\cite{hqldoc} for an in-depth treatment of the
+mathematical finance pertaining to interest rates.
 
-Using the Haskell type system we can make sure that a continuously compounded
-rate is not mistakenly used in a function that expects a zero rate.
-Note that \texttt{newtype} does not exacerbate overhead.\\
-
-We refer to the documentation \cite{hqldoc}[Some Section] for an 
-in-depth treatment of the mathematical finance pertaining to interest rates.
+\ab{Add a small example here where you discount a single future payment here,
+will serve nicely as motivation and tie things together.}
 
 \section{Fixed Income}
 
-Now that we have cemented the intricacies of interest rates we will look at 
+Now that we have cemented the basics of interest rates we will look at 
 where they are applied, namely in which financial instruments. In this section
 we will go through how we have modelled the subset of products called 
-\emph{fixed income}.\\
-
-In fixed income, a bond is a financial security that promises the bond holder a
+\emph{fixed income}, of which bonds are the bread and butter.\\
+They are financial securities that promises the bond holder a
 stream of future payments. These play a huge role in the financial markets are
 are typically only offered by governments or large financial institutions.\\
 
@@ -161,30 +174,30 @@ depicted in figure \ref{fig:serialcf}.\\
 \node at (0, -1.5) () {$t=0$};
 
 \filldraw[draw=black, fill=blue] (2,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=red]  (2,1) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=lightgray]  (2,1) rectangle node {} +(0.2,1);
 \node at (2, 2.5) () {$t=1$};
 
 \filldraw[draw=black, fill=blue] (4,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=red]  (4,1) rectangle node {} +(0.2,0.75);
+\filldraw[draw=black, fill=lightgray]  (4,1) rectangle node {} +(0.2,0.75);
 \node at (4, 2.5) () {$t=2$};
 
 \filldraw[draw=black, fill=blue] (6,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=red]  (6,1) rectangle node {} +(0.2,0.5);
+\filldraw[draw=black, fill=lightgray]  (6,1) rectangle node {} +(0.2,0.5);
 \node at (6, 2.5) () {$t=3$};
 
 \filldraw[draw=black, fill=blue] (8,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=red]  (8,1) rectangle node {} +(0.2,0.25);
+\filldraw[draw=black, fill=lightgray]  (8,1) rectangle node {} +(0.2,0.25);
 \node at (8, 2.5) () {$t=4$};
 
 \filldraw[draw=black, fill=blue] (10,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=red]  (10,1) rectangle node {} +(0.2,0.1);
+\filldraw[draw=black, fill=lightgray]  (10,1) rectangle node {} +(0.2,0.1);
 \node at (10, 2.5) () {$t=5$};
 
 % Legend
 \filldraw[draw=black, fill=blue] (7,-1) rectangle node {} +(0.2,0.2);
 \node at (8.3, -0.92) () {repayment};
 
-\filldraw[draw=black, fill=red] (7,-1.5) rectangle node {} +(0.2,0.2);
+\filldraw[draw=black, fill=lightgray] (7,-1.5) rectangle node {} +(0.2,0.2);
 \node at (8, -1.44) () {coupon};
 
 \end{tikzpicture}
@@ -195,14 +208,16 @@ depicted in figure \ref{fig:serialcf}.\\
 
 We observe that the bond issuer makes fixed size deposits to the counterpart to 
 repay the loan. Since there is no such thing as a free lunch, so-called coupon 
-payments are made in addition to compensate for having its funds tied up. The 
-coupon is a scalar, hence the coupon payments are decreasing as a result of the 
-repayment amortization \cite{hqldoc}[Some Section].\\
+payments are made in addition to compensate for having its funds tied up. These
+payments are simply the bond's interest rate applied to the face value of the
+bond, and are decreasing as a result of the repayment amortization
+\cite{hqldoc}.\\
+
 In addition to the serial, we present the most basic bond imaginable, the zero 
 coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified 
 tenor and interest rate that pays a fixed amount at maturity. As instruments and
-bonds come in multiple flavours we have designed a type class hiearchy to model
-the complexity as :
+bonds all come in multiple flavours we have designed a type class hiearchy to
+model the complexity:
 
 \begin{figure}[!htb]
 \centering
@@ -212,14 +227,22 @@ the complexity as :
 \label{fig:comp02}
 \end{figure}
 
-We raise the following question: how do we determine the price of such a bond, 
-and how is this done in \hql? Before we can answer such a question we have to 
+\ab{Delayed creating an image since I didn't 
+think aethetics were critical for the draft.}
+
+\begin{center}
+\texttt{<< Insert description of the class hierarchy >>}\\
+\end{center}
+
+To motivate the coming sections we raise the following question: How do we
+determine the price of such a bond, 
+and how do we model it in \hql? Before we can answer such a question we have to 
 introduce the concept of the time value of money, motivated by a small example: 
 As we saw in the serial example, the bond holder is compensated for having its 
 funds tied up. The reader should think of coupons as the cash value of the 
 opportunity cost incurred by lending the money to the bond issuer.
 
-\section{Discounting}
+\section{Discounting}\label{sec:discounting}
 
 So far we have seen that Haskell's class system permits us to organize the 
 different components and relations.
@@ -236,7 +259,7 @@ investor to assess whether an investment is up to par. A promise of a payment
 in the future therefore has to be proportional to what the investor otherwise 
 would have been able to receive in the market.\\
 
-An essentail tenet of our architecture is that we keep the backend/pricing 
+A central tenet of our architecture is that we keep the backend/pricing 
 engine as simle as possible and keep the interface detailed and 
 self-explanatory. The process of discounting can be seen as taking the dot product
 between the discount factors and the cash flows at each point in time,
@@ -352,8 +375,9 @@ of our project. Therefore it is convenient to model them using a type class, sin
 A term structure can be viewed as a function f that given a tenor returns 
 an interest rate. Since these are zero rates, term structures are valuable 
 tools in finance as we may use them to discount any cashflow regardless how it
-was generated. The converse is not true, we cannot use a serial's rate to
-discount a bullet.\\
+was generated. The converse is not true, we cannot use the rate over the tenor
+of a serial to discount a future income stream, unless that follows the exact
+same cash flow pattern.\\
 
 \begin{figure}[h!]
 \begin{center}
@@ -395,7 +419,7 @@ discount a bullet.\\
 \end{figure}
 
 A logarithmic shaped term structure as shown in \ref{fig:anc} characterizes a
-normal market, where the return on an investment increases in some proportion
+"normal" market, where the return on an investment increases in some proportion
 to the time you have tied up your funds\footnote{In reality, the shape depends on 
 socio-economic factors such as growth or decline in the economy.}.\\
 
@@ -430,7 +454,7 @@ class TermStructure a where
 \end{hscode}
 
 For instance, \texttt{yieldAt} function applied to the term structure in
-\ref{fig:anc} with an offset of 3.5 years would produce $2.4\%$. We have
+figure \ref{fig:anc} with an offset of 3.5 years would produce $2.4\%$. We have
 defined the following data types that are instances of the class above:
 
 \begin{hscode}
@@ -443,11 +467,15 @@ newtype AnalyticalTermStructure
 \end{hscode}
 
 Moreover, the \texttt{TermStructure} class defines \texttt{fwdRate}, which
-is a forward rate. This is conceptual leap required to understand these,
-as they are simply interest rates in the future. Notwithstanding, their
-usefulness is may not be evident. As mentioned, floating-rate bonds are
-defined by the fact that the interest rate is non-deterministic. 
+is a forward rate. There is no conceptual leap required to understand these,
+as they are simply interest rates in the future, hence the type signature
+requiring two offsets.
 
+Notwithstanding, their usefulness is may not be evident. As mentioned, 
+floating-rate bonds are defined by the fact that the interest rate is
+non-deterministic. 
+
+\ab{Explain forward rates!}
 % TODO Talk about FWDRATES
 
 \section{Options, Futures and other Derivatives}

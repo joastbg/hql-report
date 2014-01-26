@@ -1,13 +1,55 @@
 \chapter{Background}
 
 A financial security is a tradable legal claim on a firm's asset or income 
-that is traded in an organized market [Alexander, Market Risk Analysis].
-A portfolio is  a number of positions in such securities such as long or short 
-positions in equities, bonds and other types of financial instruments. The 
-present value of such a collection can be computed through discounting and 
-credit ratings to  reflect the theoretical value they would have if they 
-existed today. This allows investors to assess whether resources could yield 
-higher returns elsewhere.\\
+that is traded in an organized market\cite{alexander2008market}.
+A portfolio is  a number of positions in such securities, equities, bonds
+and other types of financial instruments. 
+Such instruments are typically traded on an exchange such as 
+\href{http://www.nasdaqomxnordic.com/}{NASDAQ OMX Nordice}, but so-called
+\emph{over-the-counter} (OTC) products also exist where two parties enter
+a unilateral, legally binding, trade.\\
+
+The value of such a collection can be computed to reflect the theoretical 
+value they would have if they existed today. This allows investors to assess
+whether resources could yield higher returns elsewhere.\\
+
+Such analyses involve an understanding of the industries, economics, mathematics
+and computer science. For instance, domain-specific knowledge in the energy 
+industry is a prerequisite for fruitful investing in oil. Similarly, economists 
+must apply their knowledge to best assess market trends and constantly reevaluate
+the forecasts they base their trading on.
+Further, people known as \emph{quants} combine mathematics and computer science
+in creating and implementing models for risk management, asset pricing or 
+algorithmic trading.\\
+
+In this project we concern ourselves with mathematical finance and the tool
+set required by \emph{quants}.\\
+
+Fixed income
+Two components are key to the pricing of assets in the fixed income category.
+
+Credit risk is a method of evaluating the creditworthiness of a debitor, i.e. 
+quantifying how likely it is that the counterpart will pay back its debt. This 
+is not considered for exchange-traded products, as losses caused by defaults 
+are covered by the members of the exchange\footnote{If a large exchange 
+defaults the world economy would be in utter turmoil.}. However, for OTC
+products, the evaluation of credit risk is critical as the consequences of a 
+default of the counterparty lies solely with the opposing party. Since the 
+financial crisis of 2008 this has become increasingly important for financial 
+institutions [ref], and clearing houses have been established to mitigate the 
+domino effect of collapses of large financial institutions.
+The time value of money and credit risk are two key components allowing 
+investors to gauge whether an investment will be in their favour.\\
+
+Financial instruments are priced differently, some using closed-form functions 
+and others relying on stochastic simulation, the latter being scoped out of 
+this project.\\
+
+
+
+
+Today, all the complexity we describe must be coalesced and manifested by means
+of modelling the different financial assets and concepts in a computer program.\\
 
 The time value of money is a concept that allows investors to assess whether an 
 investment is up to par. In essence, it tells us how high a return an 
@@ -18,24 +60,6 @@ As the prevailing interest rate is observable, the time value of money enables
 the investor to assess whether an investment is up to par. A promise of a 
 payment in the future therefore has to be proportional to what the investor 
 otherwise would have been able to receive in the market.\\
-
-Credit risk is a method of evaluating the creditworthiness of a debitor, i.e. 
-quantifying how likely it is that the counterpart will pay back its debt. This 
-is not considered for exchange-traded products, as losses caused by defaults 
-are covered by the members of the exchange\footnote{If the exchange itself 
-defaults, everyone is royally screwed anyway}. However, for so-called 
-\emph{over-the-counter} products (OTC), where two parties enter an agreement, 
-the evaluation of credit risk is critical as the consequences of a default of 
-the counterparty lies solely with the opposing party. Since the financial 
-crisis of 2008 this has become increasingly important for financial 
-institutions [ref], and clearing houses have been established to mitigate the 
-domino effect of collapses of large financial institutions.
-The time value of money and credit risk are two key components allowing 
-investors to gauge whether an investment will be in their favour.\\
-
-Financial instruments are priced differently, some using closed-form functions 
-and others relying on stochastic simulation, the latter being scoped out of 
-this project.\\
 
 We now briefly describe the financial products in the category of fixed income, 
 and we refer appendix A for a more in-depth treatment.\\
