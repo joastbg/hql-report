@@ -1,4 +1,5 @@
 filename=report
+debug=report_debug.txt
 
 NO_COLOR=\x1b[0m
 OK_COLOR=\x1b[32;01m
@@ -41,35 +42,35 @@ endef
 
 #all: ps
 #	$(call colorecho,"Preparing document" $(filename))
-#	@pdflatex ${filename}.tex > ex2_output.txt 2>&1
+#	@pdflatex ${filename}.tex > report_debug.txt 2>&1
 #	$(call doneecho,"Success! Wrote "$(filename)".pdf")
 
 pdf: ps
-	@ps2pdf ${filename}.ps > ex2_output.txt 2>&1
+	@ps2pdf ${filename}.ps > report_debug.txt 2>&1
 	$(call pdfdone,"Success! Wrote "$(filename)".pdf")
 
 ps: dvi
-	@dvips ${filename}.dvi > ex2_output.txt 2>&1
+	@dvips ${filename}.dvi > report_debug.txt 2>&1
 	$(call psdone,"Success! Wrote "$(filename)".ps")
 dvi:
-	@pdflatex -shell-escape ${filename}.tex > ex2_output.txt 2>&1
+	@pdflatex -shell-escape ${filename}.tex > report_debug.txt 2>&1
 	$(call colorecho,"latex ")
-	@latex -shell-escape ${filename} > ex2_output.txt 2>&1
+	@latex -shell-escape ${filename} > report_debug.txt 2>&1
 
 	$(call colorecho,"bibtex ")
-	@bibtex ${filename} > ex2_output.txt 2>&1
+	@bibtex ${filename} > report_debug.txt 2>&1
 	
 	$(call colorecho,"makeglossaries")
-	@makeglossaries ${filename} > ex2_output.txt 2>&1
+	@makeglossaries ${filename} > report_debug.txt 2>&1
 
 	$(call colorecho,"latex ")
-	@latex -shell-escape ${filename} > ex2_output.txt 2>&1
+	@latex -shell-escape ${filename} > report_debug.txt 2>&1
 	
 	$(call colorecho,"makeindex")
-	@makeindex ${filename} > ex2_output.txt 2>&1
+	@makeindex ${filename} > report_debug.txt 2>&1
 
 	$(call colorecho,"latex")
-	@latex -shell-escape ${filename} > ex2_output.txt 2>&1
+	@latex -shell-escape ${filename} > report_debug.txt 2>&1
 
 medit:
 	@$(ECHO) -n compiling debug foo.cpp...
@@ -88,7 +89,7 @@ readpdf:
 clean:
 	rm -f *.ps *.pdf *.log *.aux *.out *.dvi *.bbl *.blg *.aux *.lot *.lof *.toc *.xdy *.gls *.glo *.glg *.acn *.idx *.ist
 bib:
-	bibtex ${filename} > ex2_output.txt 2>&1
+	bibtex ${filename} > report_debug.txt 2>&1
 
 glossaries:
-	makeglossaries ${filename} > ex2_output.txt 2>&1
+	makeglossaries ${filename} > report_debug.txt 2>&1
