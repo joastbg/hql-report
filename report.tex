@@ -48,6 +48,53 @@ Sinan Gabel, sinan.gabel@gmail.com
 \usepackage[intoc]{nomencl}
 
 
+\definecolor{comments}{rgb}{0,0.6,0}
+\definecolor{strings}{rgb}{0.9,0,0}
+\definecolor{keywords}{rgb}{0,0,0}
+\definecolor{identifier}{rgb}{0.10,0.10,0.10}
+\definecolor{background}{rgb}{0.98,0.98,0.98}
+
+\lstdefinestyle{BashInputStyle}{
+  language=haskell,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=tblr,
+  columns=fullflexible,
+  backgroundcolor=\color{gray!10},
+  linewidth=1.0\linewidth,
+  xleftmargin=0.05\linewidth,
+  keywordstyle= \color{keywords},
+  identifierstyle=\color{identifier},
+  stringstyle=\color{strings},
+  commentstyle=\color{comments},
+  basicstyle=\fontsize{10}{12}\color{black}\ttfamily,
+  frame=single,
+  framesep=2pt,
+  framerule=0.6pt
+}
+
+\lstdefinestyle{Output}{
+  language=haskell,
+  breaklines=true,
+  breakatwhitespace=true,
+  frame=tblr,
+  columns=fullflexible,
+  backgroundcolor=\color{gray!10},
+  linewidth=1.0\linewidth,
+  xleftmargin=0.05\linewidth,
+  keywordstyle= \color{keywords},
+  identifierstyle=\color{identifier},
+  stringstyle=\color{strings},
+  commentstyle=\color{comments},
+  basicstyle=\fontsize{10}{12}\color{black}\bfseries,
+  frame=single,
+  framesep=2pt,
+  framerule=0.9pt,
+  %rulecolor=\color{gray}
+}
+
+\lstset{escapechar=@,style=BashInputStyle}
+
 %\usepackage[toc,acronym]{glossaries} 
 
 \makeindex 
@@ -97,6 +144,8 @@ framesep=2mm}
 \begin{textblock*}{100mm}(30mm, 280mm )
 \end{textblock*}
 }
+
+
 
 %
 %---------------------   end of the 'preamble'
