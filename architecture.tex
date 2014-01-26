@@ -70,7 +70,7 @@ much nicer to work with in more advanced fixed income modelling
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[scale=.7]{images/comp02.eps}
+\includegraphics[scale=1.2]{images/comp02.eps}
 \caption{How compounding methods influence returns.}
 \label{fig:comp02}
 \end{figure}
@@ -84,11 +84,11 @@ absurd, as we derive it from equation \ref{eq:expcomp}.
 \begin{center}  
 \begin{longtable}{|r|c|c|}
 \hline  
-\backslashbox{Time}{Function}
+\backslashbox{Time}{Compounding}
            &Linear  & Exponential\\\hline
 Discrete   & Flat   & Periodic\\\hline
 Continuous & \textcolor{red}{\xmark} & Continouous\\\hline
-\caption{Interest rates and compounding.}
+\caption{Compounding and time steps.}
 \end{longtable}
 \label{tab:cmptable}
 \end{center}
@@ -141,9 +141,9 @@ are typically only offered by governments or large financial institutions.\\
 
 We will present our \texttt{FixedIncome} module by means of a running example
 of a bond. 
-A \emph{serial} is an easy to understand example of a bond that equates to a 
-typical Danish house loan. The cash flow of the holder of a 5 year serial with
-annual repayments is depicted in figure \ref{fig:serialcf}.\\
+A \emph{serial} is an example of a bond that equates to a typical Danish house
+loan. The cash flow of the holder of a 5 year serial with annual repayments is
+depicted in figure \ref{fig:serialcf}.\\
 
 \begin{figure}[h!]
 \begin{center}
@@ -300,8 +300,8 @@ For example, if we were to calculate the present value of a series of future cas
 The interest rates have hitherto been fixed scalars combined with a compounding 
 method. However, so-called floating rate bonds also exist, where the interest 
 rate is changed at regular intervals according to some entity such as the 
-LIBOR\footnote{Note that floating rate bonds are still considered “fixed 
-income” since the payments still fall on the payment dates regardless of the 
+LIBOR\footnote{Note that floating rate bonds are still considered fixed 
+income since the payments still fall on the payment dates regardless of the 
 actual amount.}. The cashflow generation for these bonds relies on simulation, 
 but the discounting is exactly the same as for fixed rate bonds.\\
 
@@ -347,20 +347,13 @@ of our project. Therefore it is convenient to model them using a type class, sin
 \textbf{CodeListing}
 > Lots of text explaining
 
-
-
 \section{Term Structure}
 
 A term structure can be viewed as a function f that given a tenor returns 
-an zero rate. The fact that it gives us zero 
-rates make them very valuable tools in finance as we may use them to discount 
-any cashflow regardless how it was generated. The converse is not true, we 
-cannot use a serial's rate to discount a bullet.\\
-We present three different term structures graphically in figure \ref{fig:anc}
-for ease of exposition. A logarithmic shaped term structure characterizes a
-normal market, where the return on an investment increases in some proportion
-to the time you have tied up your funds. However the shape depends on 
-socio-economic factors and are not discussed further.
+an interest rate. Since these are zero rates, term structures are valuable 
+tools in finance as we may use them to discount any cashflow regardless how it
+was generated. The converse is not true, we cannot use a serial's rate to
+discount a bullet.\\
 
 \begin{figure}[h!]
 \begin{center}
@@ -401,20 +394,24 @@ socio-economic factors and are not discussed further.
 \end{center}
 \end{figure}
 
+A logarithmic shaped term structure as shown in \ref{fig:anc} characterizes a
+normal market, where the return on an investment increases in some proportion
+to the time you have tied up your funds\footnote{In reality, the shape depends on 
+socio-economic factors such as growth or decline in the economy.}.\\
+
 The term structure allows investors to observe at what price banks are
-currently willing to loan. We emphasize the time sensitivity of the term 
+currently willing to loan money. We emphasize the time sensitivity of the term
 structure, as external factors can cause sudden changes in the interest
 rates and as a result the pricing of instruments (e.g. rate cuts by the
-European Central Bank).
+European Central Bank). By the time value of money it is possible to
+appraise the value of an instrument (i.e. will the return on investment
+be up to par with what a bank can offer?).\\
+
+Turning to \hql, we need term structures to be able to price our instruments.
+Like interest rates, term structures come in different flavours and we 
+have therefore also defined a type class to represent them:
 
 \begin{hscode}
-newtype DiscreteTermStructure
-  = DiscreteTermStructure (M.Map Maturity Rate)
-newtype LinearInterpolatedTermStructure
-  = LinearInterpolatedTermStructure (M.Map Maturity Rate)
-newtype AnalyticalTermStructure
-  = AnalyticalTermStructure (Offset -> Rate)
-
 class TermStructure a where
   -- | Returns the yield for a maturity
   yieldAt :: a -> Maturity -> Maybe Rate
@@ -431,6 +428,27 @@ class TermStructure a where
   dfsAt :: a -> [Maturity] -> [Maybe Rate]
   dfsAt a = map (dfAt a)
 \end{hscode}
+
+For instance, \texttt{yieldAt} function applied to the term structure in
+\ref{fig:anc} with an offset of 3.5 years would produce $2.4\%$. We have
+defined the following data types that are instances of the class above:
+
+\begin{hscode}
+newtype DiscreteTermStructure
+  = DiscreteTermStructure (M.Map Maturity Rate)
+newtype LinearInterpolatedTermStructure
+  = LinearInterpolatedTermStructure (M.Map Maturity Rate)
+newtype AnalyticalTermStructure
+  = AnalyticalTermStructure (Offset -> Rate)
+\end{hscode}
+
+Moreover, the \texttt{TermStructure} class defines \texttt{fwdRate}, which
+is a forward rate. This is conceptual leap required to understand these,
+as they are simply interest rates in the future. Notwithstanding, their
+usefulness is may not be evident. As mentioned, floating-rate bonds are
+defined by the fact that the interest rate is non-deterministic. 
+
+% TODO Talk about FWDRATES
 
 \section{Options, Futures and other Derivatives}
 
