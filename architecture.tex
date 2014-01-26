@@ -105,8 +105,6 @@ class InterestRate r where
   discountFactor :: r -> Offset -> DiscountFactor 
   -- | Reciprocal of the discount factor
   compoundFactor :: r -> Offset -> DiscountFactor 
-  -- | Annualize the rate
-  annualize      :: r -> ZeroRate
   -- | Get the intrinsic rate
   rate           :: r -> Rate
 \end{hscode}
@@ -117,6 +115,7 @@ The different compounding methods shown in table \ref{tab:cmptable} is
 reflected in the following types:
 
 \begin{hscode}
+type Rate = Double
 newtype ContinuousRate = ContinuousRate Rate deriving (Show)
 newtype ZeroRate       = ZeroRate Rate deriving (Show)
 data ExponentialRate   = ExponentialRate Rate Frequency deriving (Show)
@@ -352,25 +351,86 @@ of our project. Therefore it is convenient to model them using a type class, sin
 
 \section{Term Structure}
 
-A yield curve is a graphical representation of the cash flow of a bond.
-A term structure can be viewed as a function f that given a tenor (also known 
-as the time to maturity) returns an zero rate. The fact that it gives us zero 
+A term structure can be viewed as a function f that given a tenor returns 
+an zero rate. The fact that it gives us zero 
 rates make them very valuable tools in finance as we may use them to discount 
-any cashflow regardless how it was generated.
-We present this graphically in figure something for ease of exposition.
+any cashflow regardless how it was generated. The converse is not true, we 
+cannot use a serial's rate to discount a bullet.\\
+We present three different term structures graphically in figure \ref{fig:anc}
+for ease of exposition. A logarithmic shaped term structure characterizes a
+normal market, where the return on an investment increases in some proportion
+to the time you have tied up your funds. However the shape depends on 
+socio-economic factors and are not discussed further.
 
-The purpose of such a term structure is for investors to look at what price 
-banks are currently willing to loan. We emphasize the time sensitivity of term 
-structures
+\begin{figure}[h!]
+\begin{center}
+\begin{tikzpicture}[-,shorten >=1pt,auto,node distance=1.5cm,thick,minimum size=0.8cm,main node/.style={circle,draw=red,very thick}]
+\tikzstyle{selected edge} = [draw,line width=6pt,-,blue!30]
+\coordinate (belowstart) at (0,-1);
+\coordinate (xaxis) at (10,0);
+\coordinate (origo) at (0,0);
+\coordinate (yaxis) at (0,5);
 
-> CodeListing
-> 	- Analytical
->	- Classes
->	- ETC
+% Draw axes
+\draw[->] (origo) -- (xaxis) node[right] {Time to maturity};
+\draw[->] (origo) -- (yaxis) node[above] {Interest rate};
 
-Due, a term structure is time sensitive and are only valid at the time of 
-construction. We will return to term structure construction in section 
-something.
+% Flat TS
+%\draw[thick,draw=blue] (0,1.5) -- (10,1.5);
+% "Normal" TS
+\draw[thick,draw=green] (0,0) parabola[bend at end] (10,5);
+% Inverse TS
+%\draw[thick,draw=red] (0,5) parabola[bend at end] (10,0.5);
+
+\draw[dotted] (3,2.53) -- (3,0) node[below] {\text{ 3.5 years}};
+\draw[dotted] (3,2.53) -- (0,2.53) node[left] {2.4\%};
+
+% Legend
+%\filldraw[draw=black, fill=blue] (5.2,-1) rectangle node {} +(0.2,0.2);
+%\node at (6, -0.92) () {Flat};
+
+%\filldraw[draw=black, fill=green] (0,-1) rectangle node {} +(0.2,0.2);
+%\node at (1.55, -0.92) () {Logarithmic};
+
+%\filldraw[draw=black, fill=red] (3,-1) rectangle node {} +(0.2,0.2);
+%\node at (4.15, -0.92) () {Inverted};
+
+\end{tikzpicture}
+\caption{A example of a term structure.}
+\label{fig:anc}
+\end{center}
+\end{figure}
+
+The term structure allows investors to observe at what price banks are
+currently willing to loan. We emphasize the time sensitivity of the term 
+structure, as external factors can cause sudden changes in the interest
+rates and as a result the pricing of instruments (e.g. rate cuts by the
+European Central Bank).
+
+\begin{hscode}
+newtype DiscreteTermStructure
+  = DiscreteTermStructure (M.Map Maturity Rate)
+newtype LinearInterpolatedTermStructure
+  = LinearInterpolatedTermStructure (M.Map Maturity Rate)
+newtype AnalyticalTermStructure
+  = AnalyticalTermStructure (Offset -> Rate)
+
+class TermStructure a where
+  -- | Returns the yield for a maturity
+  yieldAt :: a -> Maturity -> Maybe Rate
+
+  -- | Returns the discount factor at an offset
+  dfAt :: a -> Maturity -> Maybe Rate
+  dfAt a m = fmap recip $ yieldAt a m
+ 
+  -- | Returns the discount factor at an offset
+  fwdRate :: a -> Maturity -> Maturity -> Maybe DiscountFactor
+  fwdRate a m0 m1 = (/) <$> dfAt a m1 <*> dfAt a m0
+  
+  -- | Returns the discount factors given a list of offsets
+  dfsAt :: a -> [Maturity] -> [Maybe Rate]
+  dfsAt a = map (dfAt a)
+\end{hscode}
 
 \section{Options, Futures and other Derivatives}
 
