@@ -19,8 +19,8 @@ Statically typed languages have the advantage of discovering a multitude of
 errors at compile time, and the type class system enables us to overload 
 functionality in our programs based on our types. This is a very desirable
 feature, as we want our financial products to have the same API (e.g. a function 
-\texttt{presentValue} should return the present value regardless of the product 
-type).\\
+called \texttt{presentValue} should return the present value regardless of the
+product type).
 
 \section{Interest Rates}
 
@@ -30,7 +30,7 @@ investing an amount of money for a set amount of time. This can be formulated
 using a very simple equation, which we will demonstrate with a one year interest
 rate on a deposits account:
 
-\begin{equation}
+\begin{equation}\label{eq:lincomp}
 FV_T = N (1 + R_T)
 \end{equation}
 
@@ -60,7 +60,7 @@ from calculus to achieve what is known as the continuously compounded interest
 rate. It is defined as the resulting interest rate when we take the limit of 
 equation \ref{eq:expcomp} as $n$ goes to infinity:
 
-\begin{equation}\label{eq:expcomp}
+\begin{equation}
 \text{lim}_{n \rightarrow \infty}\; FV_T^n \; = \; N (1 + R_T)^n
 = N e^{RT}
 \end{equation}
@@ -129,246 +129,54 @@ class InterestRate r where
 \end{hscode}
 
 It defines an interface for retrieval of rates regardless of the underlying
-data type. We often work with continuously compounded rates in options 
-pricing\cite{HULL}, hence the \texttt{continuousRate} function. The
-\texttt{discountFactor} function is explained in detail in section
-\ref{sec:discounting}.
+data type. As mentioned, advanced fixed income modelling and options pricing
+often use the continuously compounded rates due to its mathematical 
+properties\cite{HULL}. The \texttt{continuousRate} function caters to this
+need, as it essentially solves the following equation for $R_C^n$:
 
-\ab{This needs a bit more explanation}
+\begin{equation}
+e^{R_C^n} = (1+R_p)^n
+\end{equation}.
+
+where is $R_p$ the exponentially (periodically) compounded rate.\\
+
+The \texttt{discountFactor} function introduces concept that we
+explain in the following section.
 
 We refer to the documentation\cite{hqldoc} for an in-depth treatment of the
 mathematical finance pertaining to interest rates.
 
-\ab{Add a small example here where you discount a single future payment here,
-will serve nicely as motivation and tie things together.}
-
-\section{Fixed Income}
-
-Now that we have cemented the basics of interest rates we will look at 
-where they are applied, namely in which financial instruments. In this section
-we will go through how we have modelled the subset of products called 
-\emph{fixed income}, of which bonds are the bread and butter.\\
-They are financial securities that promises the bond holder a
-stream of future payments. These play a huge role in the financial markets are
-are typically only offered by governments or large financial institutions.\\
-
-We will present our \texttt{FixedIncome} module by means of a running example
-of a bond. 
-A \emph{serial} is an example of a bond that equates to a typical Danish house
-loan. The cash flow of the holder of a 5 year serial with annual repayments is
-depicted in figure \ref{fig:serialcf}.\\
-
-\begin{figure}[h!]
-\begin{center}
-\begin{tikzpicture}[-,shorten >=1pt,auto,node distance=1.5cm,thick,minimum size=0.8cm,main node/.style={circle,draw=red,very thick}]
-\tikzstyle{selected edge} = [draw,line width=6pt,-,blue!30]
-
-\coordinate (belowstart) at (0,-1);
-\coordinate (start) at (0,0);
-\coordinate (stop) at (10.2,0);
-\coordinate (abovestop) at (10.2,2);
-\draw (start) -- (stop);
-\draw (start) -- (belowstart);
-\draw (stop) -- (abovestop);
-
-\node at (0, -1.5) () {$t=0$};
-
-\filldraw[draw=black, fill=blue] (2,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=lightgray]  (2,1) rectangle node {} +(0.2,1);
-\node at (2, 2.5) () {$t=1$};
-
-\filldraw[draw=black, fill=blue] (4,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=lightgray]  (4,1) rectangle node {} +(0.2,0.75);
-\node at (4, 2.5) () {$t=2$};
-
-\filldraw[draw=black, fill=blue] (6,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=lightgray]  (6,1) rectangle node {} +(0.2,0.5);
-\node at (6, 2.5) () {$t=3$};
-
-\filldraw[draw=black, fill=blue] (8,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=lightgray]  (8,1) rectangle node {} +(0.2,0.25);
-\node at (8, 2.5) () {$t=4$};
-
-\filldraw[draw=black, fill=blue] (10,0) rectangle node {} +(0.2,1);
-\filldraw[draw=black, fill=lightgray]  (10,1) rectangle node {} +(0.2,0.1);
-\node at (10, 2.5) () {$t=5$};
-
-% Legend
-\filldraw[draw=black, fill=blue] (7,-1) rectangle node {} +(0.2,0.2);
-\node at (8.3, -0.92) () {repayment};
-
-\filldraw[draw=black, fill=lightgray] (7,-1.5) rectangle node {} +(0.2,0.2);
-\node at (8, -1.44) () {coupon};
-
-\end{tikzpicture}
-\caption{Cashflow of a serial.}
-\label{fig:serialcf}
-\end{center}
-\end{figure}
-
-We observe that the bond issuer makes fixed size deposits to the counterpart to 
-repay the loan. Since there is no such thing as a free lunch, so-called coupon 
-payments are made in addition to compensate for having its funds tied up. These
-payments are simply the bond's interest rate applied to the face value of the
-bond, and are decreasing as a result of the repayment amortization
-\cite{hqldoc}.\\
-
-In addition to the serial, we present the most basic bond imaginable, the zero 
-coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified 
-tenor and interest rate that pays a fixed amount at maturity. As instruments and
-bonds all come in multiple flavours we have designed a type class hiearchy to
-model the complexity:
-
-\begin{figure}[!htb]
-\centering
-%\includegraphics[scale=.7]{images/comp02.eps}
-\texttt{images/tcarch.png}
-\caption{Type class architecture.}
-\label{fig:comp02}
-\end{figure}
-
-\ab{Delayed creating an image since I didn't 
-think aethetics were critical for the draft.}
-
-\begin{center}
-\texttt{<< Insert description of the class hierarchy >>}\\
-\end{center}
-
-To motivate the coming sections we raise the following question: How do we
-determine the price of such a bond, 
-and how do we model it in \hql? Before we can answer such a question we have to 
-introduce the concept of the time value of money, motivated by a small example: 
-As we saw in the serial example, the bond holder is compensated for having its 
-funds tied up. The reader should think of coupons as the cash value of the 
-opportunity cost incurred by lending the money to the bond issuer.
-
 \section{Discounting}\label{sec:discounting}
 
-So far we have seen that Haskell's class system permits us to organize the 
-different components and relations.
+We first present the basic theory of cashflow discounting, and motivate with
+a small example. Given an option to invest an initial amount and receive DKK
+$100$ in a year from now, how would you decide whether or not to invest? In
+other words, what is the price of such an investment? If the investment bears
+an interest rate of 5\%, then we may use equation \ref{eq:lincomp} to solve
+for $N$:
 
-A quantitative finance library must how bonds are \hql defines
+\begin{equation}
+100 = N (1 + 0.05) \Leftrightarrow N = \frac{100}{1+0.05}
+\end{equation}
 
-The time value of money is a concept that allows investors to assess whether an 
-investment is up to par. In essence, it tells us how high a return an 
-investment should yield as a function of the time the resources are tied up. 
-Discounting is a method of scaling a future cashflow so as to represent its 
-theoretical value it would have had it existed today. As the prevailing 
-interest rate is observable in the market, the time value of money enables the 
-investor to assess whether an investment is up to par. A promise of a payment 
-in the future therefore has to be proportional to what the investor otherwise 
-would have been able to receive in the market.\\
+More generally, we have:
 
-A central tenet of our architecture is that we keep the backend
-as simple as possible and keep the interface detailed and 
-self-explanatory. The process of discounting can be seen as taking the dot product
-between the discount factors and the cash flows at each point in time,
+\begin{equation}
+DF_T FV_T= N (1 + R_T)
+\end{equation}
 
-\[
-p(0) = \mathbf{df}\cdot\mathbf{cf}
-\]
+Meaning that our discount factor, $DF_T$, is $\frac{1}{1.05} \approx 95.238$
+in the example above.\\
 
-Where the vector of discount factors, $\mathbf{df}$, and cash flow vector, $\mathbf{cf}$ are represented as
+It is quite intuitive to think that the outcome of such a proposition depends 
+on what alternatives are available. Assuming resources are limited, it may
+quickly become difficult to asses which option is opportune if the market
+offers multiple choices. This leads us onto the next key element in pricing
+theory, namely the term structure of interest rates.\\
 
-\[
-\mathbf{df} = (p(t,T_1), ..., p(t,T_n)),
-\]
-\[
-\mathbf{cf} = (c_1, ..., c_i).
-\]
+Again we refer the reader to the \hql documentation for more information.
 
-The fact that we model all bonds as list of zeros allows us to easily discount 
-all bonds in the same manner. A functional programmer will already be thinking 
-of this as a simple \texttt{map}, which is exactly how it is modelled in HQL.\\
-
-For example, if we were to calculate the present value of a series of future cash flows,
-	\[
-	\mathbf{cf} = (\$1000.00,\$1500.00,\$1000.00,\$2000.00)
-	\]
-	We can multiply by the discount function with $T_n=n$ years and the rate at 5.00\% continuously compounded,
-	\[
-	p(0) = \mathbf{df}\cdot\mathbf{cf} = (e^{-rT_1},...,e^{-rT_n})\cdot(p(0,T_1), ...,p(0,T_4))=
-	\]
-	\[
-	(e^{-0.05\cdot1},e^{-0.05\cdot2},e^{-0.05\cdot3},e^{-0.05\cdot4}) \cdot (\$1000.00,\$1500.00,\$1000.00,\$2000.00)=
-	\]
-	\[
-	(\$951.23,\$1357.26,\$860.71,\$1637.46)
-	\]
-
-	The above calculation is done in HQL using the function \textit{zipWith} taking the discount function and the list of future cash flows as arguments.
-	\vskip 0.5\FrameSep
-	\begin{lstlisting}
-	HQL> zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
-	\end{lstlisting}
-	\vskip 0.5\FrameSep
-	yields the following output:
-	\vskip 0.5\FrameSep
-	\begin{lstlisting}[style=Output]
-	[951.229424500714,1357.2561270539393,860.7079764250578,1637.4615061559637]
-	\end{lstlisting}
-	\vskip 0.5\FrameSep
-	A slightly modified version will return the sum of the cash flows. This is the basis of bond pricing, which is covered in section \nameref{sec:fi}.
-	\vskip 0.5\FrameSep
-	\begin{lstlisting}
-	HQL> sum $ zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
-	\end{lstlisting}
-	\vskip 0.5\FrameSep
-	yields the following output:
-	\vskip 0.5\FrameSep
-	\begin{lstlisting}[style=Output]
-	4806.655034135675
-	\end{lstlisting}
-
-The interest rates have hitherto been fixed scalars combined with a compounding 
-method. However, so-called floating rate bonds also exist, where the interest 
-rate is changed at regular intervals according to some entity such as the 
-LIBOR\footnote{Note that floating rate bonds are still considered fixed 
-income since the payments still fall on the payment dates regardless of the 
-actual amount.}. The cashflow generation for these bonds relies on simulation, 
-but the discounting is exactly the same as for fixed rate bonds.\\
-
-Finally, a note on terminology. The terms "discounting" and "pricing" 
-may seem equivalent at first glance. The distinction between them is simple, 
-pricing takes into account \emph{credit risk}. \\
-
-Credit risk is a method of evaluating the creditworthiness of a debitor, i.e. 
-quantifying
-how likely it is that the counterpart will pay back its debt. This is not 
-considered for
-exchange-traded products, as losses caused by defaults are covered by the 
-members of the exchange 1 . However, for so-called over-the-counter products 
-(OTC), where two parties enter an agreement, the evaluation of credit risk is 
-critical as the consequences of a default of the counterparty lies solely with 
-the opposing party. Since the financial crisis of 2008 this has become 
-increasingly important for financial institutions [ref], and clearing houses 
-have been established to mitigate the domino effect of collapses of large 
-financial institutions. The time value of money and credit risk are two key 
-components allowing investors to gauge whether an investment will be in their 
-favour.
-
-------------
-
-The cashflow of a bond (as shown in figure \ref{fig:serialcf}) can be 
-represented by a list of payments, and since the cashflow of a zero is simply
-a singleton list we may think of other bonds as a list of zero coupon bonds.
-The backend of \hql relies heavily on this premise, and it allows 
-
-The cashflow of a zero is therefore a singleton list.
-
-how the backend
-architecture of \hql relies on
-
-Its cashflow is a singleton list, which allows us to think of all other bonds
-as a collection of zero coupon bonds.\\
-
-There exist several kinds of bonds in addition to the serial, \textsc{HQL}
-
-Having introduced the basics of bonds we turn to the Haskell modelling aspects 
-of our project. Therefore it is convenient to model them using a type class, since they share a 
-
-\textbf{CodeListing}
-> Lots of text explaining
+\ab{This needs more work, but I hope you see where this is going.}
 
 \section{Term Structure}
 
@@ -477,6 +285,174 @@ non-deterministic.
 
 \ab{Explain forward rates!}
 % TODO Talk about FWDRATES
+
+\section{Fixed Income}
+
+Now that we have cemented the basics of interest rates we will look at 
+where they are applied, namely in which financial instruments. In this section
+we will go through how we have modelled the subset of products called 
+\emph{fixed income}, of which bonds are the bread and butter.\\
+They are financial securities that promises the bond holder a
+stream of future payments. These play a huge role in the financial markets are
+are typically only offered by governments or large financial institutions.\\
+
+We will present our \texttt{FixedIncome} module by means of a running example
+of a bond. 
+A \emph{serial} is an example of a bond that equates to a typical Danish house
+loan. The cash flow of the holder of a 5 year serial with annual repayments is
+depicted in figure \ref{fig:serialcf}.\\
+
+\begin{figure}[h!]
+\begin{center}
+\begin{tikzpicture}[-,shorten >=1pt,auto,node distance=1.5cm,thick,minimum size=0.8cm,main node/.style={circle,draw=red,very thick}]
+\tikzstyle{selected edge} = [draw,line width=6pt,-,blue!30]
+
+\coordinate (belowstart) at (0,-1);
+\coordinate (start) at (0,0);
+\coordinate (stop) at (10.2,0);
+\coordinate (abovestop) at (10.2,2);
+\draw (start) -- (stop);
+\draw (start) -- (belowstart);
+\draw (stop) -- (abovestop);
+
+\node at (0, -1.5) () {$t=0$};
+
+\filldraw[draw=black, fill=blue] (2,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=lightgray]  (2,1) rectangle node {} +(0.2,1);
+\node at (2, 2.5) () {$t=1$};
+
+\filldraw[draw=black, fill=blue] (4,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=lightgray]  (4,1) rectangle node {} +(0.2,0.75);
+\node at (4, 2.5) () {$t=2$};
+
+\filldraw[draw=black, fill=blue] (6,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=lightgray]  (6,1) rectangle node {} +(0.2,0.5);
+\node at (6, 2.5) () {$t=3$};
+
+\filldraw[draw=black, fill=blue] (8,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=lightgray]  (8,1) rectangle node {} +(0.2,0.25);
+\node at (8, 2.5) () {$t=4$};
+
+\filldraw[draw=black, fill=blue] (10,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=lightgray]  (10,1) rectangle node {} +(0.2,0.1);
+\node at (10, 2.5) () {$t=5$};
+
+% Legend
+\filldraw[draw=black, fill=blue] (7,-1) rectangle node {} +(0.2,0.2);
+\node at (8.3, -0.92) () {repayment};
+
+\filldraw[draw=black, fill=lightgray] (7,-1.5) rectangle node {} +(0.2,0.2);
+\node at (8, -1.44) () {coupon};
+
+\end{tikzpicture}
+\caption{Cashflow of a serial.}
+\label{fig:serialcf}
+\end{center}
+\end{figure}
+
+We observe that the bond issuer makes fixed size deposits to the counterpart to 
+repay the loan. Since there is no such thing as a free lunch, so-called coupon 
+payments are made in addition to compensate for having its funds tied up. These
+payments are simply the bond's interest rate applied to the face value of the
+bond, and are decreasing as a result of the repayment amortization
+\cite{hqldoc}.\\
+
+In addition to the serial, we present the most basic bond imaginable, the zero 
+coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified 
+tenor and interest rate that pays a fixed amount at maturity. As instruments and
+bonds all come in multiple flavours we have designed a type class hiearchy to
+model the complexity:
+
+\begin{figure}[!htb]
+\centering
+%\includegraphics[scale=.7]{images/comp02.eps}
+\texttt{images/tcarch.png}
+\caption{Type class architecture.}
+\label{fig:comp02}
+\end{figure}
+
+\ab{Delayed creating an image since I didn't 
+think aethetics were critical for the draft.}
+
+A central tenet of our architecture is that we keep the backend
+as simple as possible and keep the interface detailed and 
+self-explanatory. This way we keep the mathematical formulas as transparent
+and clean as possible while the interface remains user-friendly.\\
+
+\begin{center}
+\texttt{<< Insert description of the class hierarchy and the awesomeness of
+lists >>}\\
+\end{center}
+
+\ab{Discounting part needs to be intertwined with more Haskell goodness}.
+
+Discounting in \hql can be seen as taking the dot product between the discount
+factors and the cash flows at each point in time,
+
+\[
+p(0) = \mathbf{df}\cdot\mathbf{cf}
+\]
+
+Where the vector of discount factors, $\mathbf{df}$, and cash flow vector, $\mathbf{cf}$ are represented as
+
+\[
+\mathbf{df} = (p(t,T_1), ..., p(t,T_n)),
+\]
+\[
+\mathbf{cf} = (c_1, ..., c_i).
+\]
+
+The fact that we model all bonds as list of zeros allows us to easily discount 
+all bonds in the same manner. A functional programmer will already be thinking 
+of this as a simple \texttt{map}, which is exactly how it is modelled in HQL.\\
+
+For example, if we were to calculate the present value of a series of future cash flows,
+	\[
+	\mathbf{cf} = (\$1000.00,\$1500.00,\$1000.00,\$2000.00)
+	\]
+	We can multiply by the discount function with $T_n=n$ years and the rate at 5.00\% continuously compounded,
+	\[
+	p(0) = \mathbf{df}\cdot\mathbf{cf} = (e^{-rT_1},...,e^{-rT_n})\cdot(p(0,T_1), ...,p(0,T_4))=
+	\]
+	\[
+	(e^{-0.05\cdot1},e^{-0.05\cdot2},e^{-0.05\cdot3},e^{-0.05\cdot4}) \cdot (\$1000.00,\$1500.00,\$1000.00,\$2000.00)=
+	\]
+	\[
+	(\$951.23,\$1357.26,\$860.71,\$1637.46)
+	\]
+
+	The above calculation is done in HQL using the function \textit{zipWith} taking the discount function and the list of future cash flows as arguments.
+	\vskip 0.5\FrameSep
+	\begin{lstlisting}
+	HQL> zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
+	\end{lstlisting}
+	\vskip 0.5\FrameSep
+	yields the following output:
+	\vskip 0.5\FrameSep
+	\begin{lstlisting}[style=Output]
+	[951.229424500714,1357.2561270539393,860.7079764250578,1637.4615061559637]
+	\end{lstlisting}
+	\vskip 0.5\FrameSep
+	A slightly modified version will return the sum of the cash flows. This is the basis of bond pricing, which is covered in section \nameref{sec:fi}.
+	\vskip 0.5\FrameSep
+	\begin{lstlisting}
+	HQL> sum $ zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
+	\end{lstlisting}
+	\vskip 0.5\FrameSep
+	yields the following output:
+	\vskip 0.5\FrameSep
+	\begin{lstlisting}[style=Output]
+	4806.655034135675
+	\end{lstlisting}
+
+The interest rates have hitherto been fixed scalars combined with a compounding 
+method. However, so-called floating rate bonds also exist, where the interest 
+rate is changed at regular intervals according to some entity such as the 
+LIBOR\footnote{Note that floating rate bonds are still considered fixed 
+income since the payments still fall on the payment dates regardless of the 
+actual amount.}. The cashflow generation for these bonds relies on simulation, 
+but the discounting is exactly the same as for fixed rate bonds.\\
+
 
 \section{Options, Futures and other Derivatives}
 
