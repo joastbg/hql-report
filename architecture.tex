@@ -70,6 +70,7 @@ where $R$ is the continuously compounded interest rate.
 The motivation behind the continuously compounded interest rate is that it is
 much nicer to work with in more advanced fixed income modelling
 \cite{cmunk}[Chapter 1] and yields almost identical numerical results.\\
+\ab{This is in conflict with the other statement!}
 
 \begin{figure}[!htb]
 \centering
@@ -112,7 +113,7 @@ Using the Haskell type system we can make sure that a continuously compounded
 rate is not mistakenly used in a function that expects a zero rate.
 Note that \texttt{newtype} does not exacerbate overhead.\\
 Wishing to unify these different kinds of rates we have modelled an
-\texttt{InterestRate} class that allows for abstraction of the underlying rate.
+\texttt{InterestRate} class that allows for abstraction of the underlying rate:
 
 \begin{hscode}
 type Offset         = Double -- yearly offset
@@ -149,11 +150,11 @@ mathematical finance pertaining to interest rates.
 \section{Discounting}\label{sec:discounting}
 
 We first present the basic theory of cashflow discounting, and motivate with
-a small example. Given an option to invest an initial amount and receive DKK
-$100$ in a year from now, how would you decide whether or not to invest? In
+a small example. Given an option to invest an initial amount and receive 
+\$$100$ in a year from now, how would you decide whether or not to invest? In
 other words, what is the price of such an investment? If the investment bears
 an interest rate of 5\%, then we may use equation \ref{eq:lincomp} to solve
-for $N$:
+for $N$, the initial investment i.e. the price:
 
 \begin{equation}
 100 = N (1 + 0.05) \Leftrightarrow N = \frac{100}{1+0.05}
@@ -165,18 +166,106 @@ More generally, we have:
 DF_T FV_T= N (1 + R_T)
 \end{equation}
 
-Meaning that our discount factor, $DF_T$, is $\frac{1}{1.05} \approx 95.238$
-in the example above.\\
+Therefore our discount factor, $DF_T$, is $\frac{1}{1.05} \approx 0.95238$,
+so the \emph{present value} (or price) of the investment is \$$95.238$
+in the example above. If we have other viable options to invest in over the coming
+year, the decision becomes more complex.
 
-It is quite intuitive to think that the outcome of such a proposition depends 
-on what alternatives are available. Assuming resources are limited, it may
-quickly become difficult to asses which option is opportune if the market
-offers multiple choices. This leads us onto the next key element in pricing
-theory, namely the term structure of interest rates.\\
+Imagine a second party offering \$$90$ in one year with an additional payment of
+\$$10$ after six months. Summing the two cashflows could make us believe that the
+two options are equal. However, due to the time value of money, the latter option
+is favourable. This is because we may reinvest the \$$10$ over the remaining six
+month tenor of the investment! We present the scenario pictorially in figure
+\ref{fig:tvom} below.
+
+\begin{figure}[h!]
+\begin{center}
+\begin{tikzpicture}[-,shorten >=1pt,auto,node distance=1.5cm,thick,minimum size=0.8cm,main node/.style={circle,draw=red,very thick}]
+\tikzstyle{selected edge} = [draw,line width=6pt,-,blue!30]
+\coordinate (belowstart) at (0,-1);
+
+\coordinate (origo0) at (0,0);
+\coordinate (xaxis0) at (10,0);
+\coordinate (yaxis0) at (0,1.5);
+\coordinate (face0s) at (9.9,0);
+\coordinate (face0e) at (9.9,1.2);
+
+\coordinate (origo1) at (0,2.5);
+\coordinate (xaxis1) at (10,2.5);
+\coordinate (yaxis1) at (0,4);
+\coordinate (face1s) at (9.9,2.5);
+\coordinate (face1e) at (9.9,3.3);
+
+\coordinate (sixmpay1) at (5,2.5);
+\coordinate (sixm1) at (5,2.80);
+
+% Draw axes 0
+\draw[->] (origo0) -- (xaxis0) node[right] {Time};
+\draw[->] (origo0) -- (yaxis0) node[above] {Amount};
+
+% Draw axes 1
+\draw[->] (origo1) -- (xaxis1) node[right] {Time};
+\draw[->] (origo1) -- (yaxis1) node[above] {Amount};
+\draw[] (sixmpay1) -- (sixm1) node[above] {\$10};
+
+% Draw reinvestment option
+%\draw[dotted,draw=blue] (5.2,3.3) [bend left] (face1e);
+\node[] at (7.4,4.1) {$\overbrace{\phantom{\hspace{4.7cm}}}$};
+\node[] at (7.4,4.5) {Reinvestment};
+\node[] at (5,-0.5) {July 1$^{\text{st}}$};
+
+\filldraw[draw=black, fill=blue] (sixmpay1) rectangle node {} +(0.2,0.4);
+\filldraw[draw=black, fill=blue] (9.7,2.5) rectangle node {} +(0.2,0.7);
+\filldraw[draw=black, fill=blue] (9.7,0) rectangle node {} +(0.2,1);
+%\filldraw[draw=black, fill=lightgray]  (10,1) rectangle node {} +(0.2,0.1);
+
+% Legend
+\filldraw[draw=black, fill=blue] (7,-1) rectangle node {} +(0.2,0.2);
+\node at (8.3, -0.92) () {payment};
+\node at (9.9,3.5) () {\$90};
+\node at (9.9,1.3) () {\$100};
+
+% "Legend"
+\draw[] (origo0) -- (origo0) node[below] {Jan 1$^{\text{st}}$};
+\draw[] (9.9,0) -- (9.9,0) node[below] {Dec 31$^{\text{st}}$};
+
+% Flat TS
+%\draw[thick,draw=blue] (0,1.5) -- (10,1.5);
+% "Normal" TS
+% Inverse TS
+%\draw[thick,draw=red] (0,5) parabola[bend at end] (10,0.5);
+
+%\draw[dotted] (3,2.53) -- (3,0) node[below] {\text{ 3.5 years}};
+%\draw[dotted] (3,2.53) -- (0,2.53) node[left] {2.4\%};
+
+% Legend
+%\filldraw[draw=black, fill=blue] (5.2,-1) rectangle node {} +(0.2,0.2);
+%\node at (6, -0.92) () {Flat};
+
+%\filldraw[draw=black, fill=green] (0,-1) rectangle node {} +(0.2,0.2);
+%\node at (1.55, -0.92) () {Logarithmic};
+
+%\filldraw[draw=black, fill=red] (3,-1) rectangle node {} +(0.2,0.2);
+%\node at (4.15, -0.92) () {Inverted};
+
+\end{tikzpicture}
+\caption{Two investment opportunities showing the time value of money.}
+\label{fig:tvom}
+\end{center}
+\end{figure}
+
+As investors want to maximize profits, it is quite intuitive to think that
+the decision to invest directly depends on what alternatives are available.
+Assuming resources are limited, it may quickly become difficult to asses which
+option is opportune if the market offers multiple choices. As the discount factor
+is just the inverse of the interest rate, \texttt{discountFactor} is part of the
+interface for interest rates. 
 
 Again we refer the reader to the \hql documentation\cite{hqldoc} for more information.
 
-\ab{This needs more work, but I hope you see where this is going.}
+Since we must consider all options to maximize our profits, we must somehow have an
+overview of the interest rates currently offered in the market. This leads us onto the
+next key element in pricing theory, namely the term structure of interest rates.\\
 
 \section{Term Structure}
 
@@ -354,8 +443,7 @@ We observe that the bond issuer makes fixed size deposits to the counterpart to
 repay the loan. Since there is no such thing as a free lunch, so-called coupon 
 payments are made in addition to compensate for having its funds tied up. These
 payments are simply the bond's interest rate applied to the face value of the
-bond, and are decreasing as a result of the repayment amortization
-\cite{hqldoc}.\\
+bond, and are decreasing as a result of the repayment amortization\cite{hqldoc}.\\
 
 In addition to the serial, we present the most basic bond imaginable, the zero 
 coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified 
@@ -364,15 +452,11 @@ bonds all come in multiple flavours we have designed a type class hiearchy to
 model the complexity:
 
 \begin{figure}[!htb]
-\centering
-%\includegraphics[scale=.7]{images/comp02.eps}
-\texttt{images/tcarch.png}
+%\centering
+%\includegraphics[scale=.7]{lz.png}
 \caption{Type class architecture.}
-\label{fig:comp02}
+%\label{fig:comp02}
 \end{figure}
-
-\ab{Delayed creating an image since I didn't 
-think aethetics were critical for the draft.}
 
 A central tenet of our architecture is that we keep the backend
 as simple as possible and keep the interface detailed and 
