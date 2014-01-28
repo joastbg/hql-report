@@ -1,6 +1,47 @@
 \chapter{Deliverables}
 
+\section{Bond data types}\label{sec:appbonds}
 
+\begin{hscode}
+data FixedCouponBond where
+  Zero   :: { fsett :: Date,
+              fmatu :: Date,
+              fface :: Cash,
+              frate :: Double,
+              fdcc  :: (DayCount d) => d,
+              froll :: RollConvention } -> FixedCouponBond
+  Consol :: { fsett :: Date,
+              fface :: Cash,
+              frate :: Double,
+              fstms :: Settlements,
+              fdcc  :: (DayCount d) => d,
+              froll :: RollConvention } -> FixedCouponBond
+  Bullet :: { fsett :: Date,
+              fmatu :: Date,
+              fface :: Cash,
+              frate :: Double,
+              fstms :: Settlements,
+              fdcc  :: (DayCount d) => d,
+              froll :: RollConvention } -> FixedCouponBond
+\end{hscode}
+
+\begin{hscode}
+data FixedAmortizedBond where 
+  Annuity :: { asett :: Date,
+               amatu :: Date,
+               aface :: Cash,
+               arate :: Double,
+               astms :: Settlements,
+               adcc  :: (DayCount d) => d,
+               aroll :: RollConvention } -> FixedAmortizedBond
+  Serial :: {  asett :: Date,
+               amatu :: Date,
+               aface :: Cash,
+               arate :: Double,
+               astms :: Settlements,
+               adcc  :: (DayCount d) => d,
+               aroll :: RollConvention } -> FixedAmortizedBond
+\end{hscode}
 
 \section{Formula sheet}
 \section{Payoff diagrams}

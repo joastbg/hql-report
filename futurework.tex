@@ -4,6 +4,17 @@ As we set out to design the architecture of \hql, our project is naturally far
 from a fully-fledged library, and many more modules must be added. Below we
 describe the next steps that should be taken in the development of \hql.
 
+\section{Environment}
+
+Our current design does not solve the problem of 
+It is desirable to wrap our computations in a monad, alleviating the need for
+us to pass a term structure to all pricing functions.
+Further, our \texttt{}
+
+\begin{hscode}
+PricingEngine
+\end{hscode}
+
 \section{Floating rates}
 
 First of all we do not have support for the ubiquitous floating-rate bonds, 

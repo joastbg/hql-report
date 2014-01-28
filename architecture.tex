@@ -116,7 +116,7 @@ Wishing to unify these different kinds of rates we have modelled an
 \texttt{InterestRate} class that allows for abstraction of the underlying rate:
 
 \begin{hscode}
-type Offset         = Double -- yearly offset
+type Offset         = Double -- offset in years
 type DiscountFactor = Double
 class InterestRate r where
   -- | Returns the corresponding continuously compounded rate
@@ -328,7 +328,7 @@ European Central Bank). By the time value of money it is possible to
 appraise the value of an instrument (i.e. will the return on investment
 be up to par with what a bank can offer?).\\
 
-Turning to \hql, we need term structures to be able to price our instruments.
+Turning to \hql, we need term structures to be able to price our cashflows.
 Like interest rates, term structures come in different flavours and we 
 have therefore also defined a type class to represent them:
 
@@ -350,8 +350,11 @@ class TermStructure a where
   dfsAt a = map (dfAt a)
 \end{hscode}
 
+
 For instance, \texttt{yieldAt} function applied to the term structure in
-figure \ref{fig:anc} with an offset of 3.5 years would produce $2.4\%$. We have
+figure \ref{fig:anc} with an offset of 3.5 years\footnote{Note that we use
+offsets from today as it greatly simplifies the implementation. The coming 
+sections will make this choice apparent.} would produce $2.4\%$. We have
 defined the following data types that are instances of the class above:
 
 \begin{hscode}
@@ -363,17 +366,105 @@ newtype AnalyticalTermStructure
   = AnalyticalTermStructure (Offset -> Rate)
 \end{hscode}
 
-Moreover, the \texttt{TermStructure} class defines \texttt{fwdRate}, which
-is a forward rate. There is no conceptual leap required to understand these,
-as they are simply interest rates in the future, hence the type signature
-requiring two offsets.
+To better understand our data types we have shown them in figure \ref{fig:tstypes},
+where we see that the \texttt{dfAt} is only defined at certain points in time for
+a discrete term structure. Our \texttt{LinearInterpolatedTermStructure} is similar,
+except it uses linear interpolation to estimate a term structure. \ab{Need Munk's
+perspective on this!}
+Finally, The analytical term structure is simply a function with domain $\mathcal{R}^+_0$
+that maps an offset from valuation date to a zero interest rate over the given
+period. When dealing with approximation\cite{cmunk} such functions become useful.
+The reader should note that an interest rate with offset zero (that is, today) is
+always zero, since nobody would be willing to lend you money for a single day.
+Due to the inverse relation of interest rates and discount factors, the discount factor
+today is always 1.
 
-Notwithstanding, their usefulness is may not be evident. As mentioned, 
-floating-rate bonds are defined by the fact that the interest rate is
-non-deterministic. 
+\begin{figure}[h!]
+\begin{center}
+\begin{tikzpicture}[-,shorten >=1pt,auto,node distance=1.5cm,thick,minimum size=0.8cm,main node/.style={circle,draw=red,very thick}]
+\tikzstyle{selected edge} = [draw,line width=6pt,-,blue!30]
 
-\ab{Explain forward rates!}
-% TODO Talk about FWDRATES
+\coordinate (belowstart) at (0,-1);
+\coordinate (xaxis) at (10,0);
+\coordinate (origo) at (0,0);
+\coordinate (yaxis) at (0,5);
+
+% Discrete points
+\coordinate (d0) at (1,1);
+\coordinate (d1) at (2,2);
+\coordinate (d2) at (3,3);
+\coordinate (d3) at (4,3.5);
+\coordinate (d4) at (5.6,4);
+\coordinate (d5) at (7.5,4.5);
+\coordinate (d6) at (9.2,5);
+
+% Draw axes
+\draw[->] (origo) -- (xaxis) node[right] {Offset from today (in years)};
+\draw[->] (origo) -- (yaxis) node[above] {Interest rate};
+
+% Analytical
+\draw[thick,draw=purple] (0,0) parabola[bend at end] (10,5);
+
+% Discrete
+\node[minimum size=2pt,draw,circle,inner sep=1pt,fill] at (d0) {};
+\node[minimum size=2pt,draw,circle,inner sep=1pt,fill] at (d1) {};
+\node[minimum size=2pt,draw,circle,inner sep=1pt,fill] at (d2) {};
+\node[minimum size=2pt,draw,circle,inner sep=1pt,fill] at (d3) {};
+\node[minimum size=2pt,draw,circle,inner sep=1pt,fill] at (d4) {};
+\node[minimum size=2pt,draw,circle,inner sep=1pt,fill] at (d5) {};
+\node[minimum size=2pt,draw,circle,inner sep=1pt,fill] at (d6) {};
+
+% Linear Interpolated
+\draw[dotted,draw=blue] (origo) -- (d0);
+\draw[dotted,draw=blue] (d0) -- (d1);
+\draw[dotted,draw=blue] (d1) -- (d2);
+\draw[dotted,draw=blue] (d2) -- (d3);
+\draw[dotted,draw=blue] (d3) -- (d4);
+\draw[dotted,draw=blue] (d4) -- (d5);
+\draw[dotted,draw=blue] (d5) -- (d6);
+
+% Today
+\node at (0,-0.5) () {Today};
+% Legend
+\filldraw[draw=black, fill=blue] (5.2,-1.08) rectangle node {} +(0.2,0.2);
+\node at (7, -1) () {Interpolated};
+
+\filldraw[draw=black, fill=purple] (0,-1.08) rectangle node {} +(0.2,0.2);
+\node at (1.55, -1) () {Analytical};
+
+\filldraw[draw=black, fill=black] (3,-1.08) rectangle node {} +(0.2,0.2);
+\node at (4.15, -1) () {Discrete};
+
+\end{tikzpicture}
+\caption{Visualization of our term structure types.}
+\label{fig:tstypes}
+\end{center}
+\end{figure}
+
+Moreover, the \texttt{TermStructure} class defines a forward rate function,
+\texttt{fwdRate}, which is the implied future zero rates. There is no
+conceptual leap required to understand these, as they are simply interest
+rates in the future, hence the type signature requiring two offsets.
+
+Notwithstanding, their usefulness is may not be evident. 
+Imagine three points in time, $d_0$ - today - and two
+offsets in the future $d_1$ and $d_2$. We are then tasked with finding out
+what the interest rate between $d_1$ and $d_2$, $R_{12}$ would be. Despite not 
+knowing whether the interest rate will increase or decrease we may specify 
+this by introducing \emph{arbitrage}. In brief, \emph{arbitrage} is the
+assumption it is not possible to buy and sell the same good and turn a 
+profit i.e. "free money". Given annual rates we can now claim the following:
+
+\begin{equation}
+\underbrace{(1+R_{02})^2}_{observable} = \underbrace{(1+R_{01})}_{observable}(1 + R_{12})
+\end{equation}
+
+where $R_{xy}$ denotes the rate between two points in time $x$ and $y$. We
+can now solve for $R_{12}$ to obtain the forward rate. Forward rates therefore
+allow us to make statements about future interest rates as a result of the
+prevailing interest rates.
+
+% TODO more
 
 \section{Fixed Income}
 
@@ -447,21 +538,54 @@ bond, and are decreasing as a result of the repayment amortization\cite{hqldoc}.
 
 In addition to the serial, we present the most basic bond imaginable, the zero 
 coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified 
-tenor and interest rate that pays a fixed amount at maturity. As instruments and
-bonds all come in multiple flavours we have designed a type class hiearchy to
-model the complexity:
+tenor and interest rate that pays a fixed amount at maturity. We have designed 
+a class to encapsulate the functionality of bonds:
 
-\begin{figure}[!htb]
-%\centering
-%\includegraphics[scale=.7]{lz.png}
-\caption{Type class architecture.}
-%\label{fig:comp02}
-\end{figure}
+\begin{hscode}
+-- | Bond class specifies common denominator for all bond types 
+class Instrument b => Bond b where
+  -- | Returns the present value of the bond
+  pv           :: TermStructure ts => b -> ts -> IO Cash
+  -- | Returns clean or dirty price on a given date
+  clean, dirty :: TermStructure ts => b -> ts -> Date -> Cash
+  -- | Interest accrued up to a specific date
+  ai           :: b -> Date -> Cash
+  -- | Principal (or face value) of a bond
+  principal    :: b -> Cash
+  -- | A list of Payments indicating remaining cashflow
+  outstanding  :: b -> Payments
+  -- | Returns a list of Payments representing the cashflow
+  -- over the bond over its lifetime
+  cashflow     :: b -> Payments
+  -- | Returns the coupon part of the cashflow
+  coupons      :: b -> Payments
+  -- | Returns the dates at which cashflow is exchanged
+  paymentDates :: b -> [Date]
+\end{hscode}
+
+% Explain the Bond class
+
+\begin{hscode}
+-- | Instrument is a high-level class for financial instruments
+class Instrument i where
+  expired :: i -> IO Bool
+\end{hscode}
+
+% Explain the Instrument class
+
+% Explain the Amortized class
+
+Appendix \ref{sec:appbonds} shows the data types that we have created
+to represent the various flavours of bonds.\\ 
 
 A central tenet of our architecture is that we keep the backend
 as simple as possible and keep the interface detailed and 
 self-explanatory. This way we keep the mathematical formulas as transparent
 and clean as possible while the interface remains user-friendly.\\
+
+% Talk about front-end
+
+% Discuss lists/backend representation
 
 \begin{center}
 \texttt{<< Insert description of the class hierarchy and the awesomeness of
@@ -536,12 +660,18 @@ LIBOR\footnote{Note that floating rate bonds are still considered fixed
 income since the payments still fall on the payment dates regardless of the 
 actual amount.}. The cashflow generation for these bonds relies on simulation, 
 but the discounting is exactly the same as for fixed rate bonds.\\
-
-
+ 
 \section{Options, Futures and other Derivatives}
 
 In this section we describe how our architecture caters to other financial 
 products in addition to the fixed income instruments we have seen.\\
+
+We present our design of \hql's class instrastructure in figure \ref{fig:classhier}.
+The arrows indicate class constraints, e.g. an instance of \texttt{Bond}
+must also be an instance of \texttt{Instrument}. As many of the different
+products represented by classes have been scoped out of the project, we shall only
+give a brief description of their traits and instead focus of the architectural
+aspects.\\
 
 First of all, a natural next step in the development of HQL is the 
 implementation of derivatives which is itself a product relying on another- the 
@@ -553,6 +683,13 @@ the underlying directly affects the value of having entered such an agreement.\\
 However, with the addition of floating rate bonds, we may model fixed income 
 derivatives such as swaps. A swap is contract in which two counterparties agree 
 to exchange two cashflows.
+
+%\begin{figure}[!htb]
+%\centering
+%\includegraphics[scale=.7]{lz.png}
+%\caption{Type class architecture.}
+%\label{fig:classhier}
+%\end{figure}
 
 %Fixed
 %Floating
