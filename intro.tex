@@ -3,7 +3,7 @@
 Our everyday lives are becoming increasingly dependent on IT, and as a result,
 software errors are manifold. The financial sector has a particular low 
 tolerance, as erroneous software may have dire consequences in the form of
-massive monetary loss.Consequently, this puts stress on the sophistication and 
+massive monetary loss. Consequently, this puts stress on the sophistication and 
 quality of valuation and risk management tools employed by financial institutions.\\
 A language that by design allows us to discover a large portion of software
 errors in the compilation phase is therefore preferable in the financial domain.\\
@@ -11,9 +11,11 @@ errors in the compilation phase is therefore preferable in the financial domain.
 We present the the architecture for a library for quantitative finance. We have
 implemented it using the pure functional programming language Haskell which
 features many attractive properties that steer us toward producing safe and
-correct code.\\
+correct code. The desired functionality is modelled after
+{\tt DerivativesExpert}\cite{Mathematica:DerivativesExpert},
+a Mathematica\cite{mathematica} library for valuation developed by Sinan Gabel.
 
-The library is intended to be used for the following purposes:\\
+The library is intended to be used for the following purposes:
 
 \begin{itemize}
 \item Numerical valuation of financial contracts with closed-form solutions
