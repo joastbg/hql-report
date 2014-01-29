@@ -31,18 +31,20 @@ We want to model what we call a pricing engine, which combines the
 these contracts and mathematical models with the current state of the world
 in order to produce meaningful measurements of said contract.\\
 
-\begin{figure}[!htb]
-\centering
-%\includegraphics[scale=0.6]{images/Overview.pdf}
-\caption{Overview of quantitative finance.}
+\begin{figure}[h!]
+\begin{center}
+\begin{minipage}{\linewidth}
+\makebox[\linewidth]{\includegraphics[keepaspectratio=true,scale=0.6]{images/Overview.pdf}}
+\caption{Overview of what we want to model.}
 \label{fig:overview}
+\end{minipage}
+\end{center}
 \end{figure}
 
 Therefore, we must model the contracts, the models, and the external world.
 We shall begin with the modelling aspects and provide the reader with the
 matematical finance required. Thereafter we will present the contracts, and
 finally how such a pricing engine is modelled. 
-% TODO Huge image of concepts
 
 \section{Interest Rates}
 
@@ -58,7 +60,7 @@ FV_T = N (1 + R_T)
 
 where $FV_T$ denotes the future value in $T=1$ periods, $N$ is the principal
 and $R_T$ is the rate over the period $T$\footnote{$T$ is also referred to as the
-\emph{tenor}.}.) Extending this to multiple years we introduce a new 
+\emph{tenor}.}. Extending this to multiple years we introduce a new 
 concept called compound interest, which is simply the formula above reapplied
 a number of times. The intuitive approach is
 that the compound interest is the return from reinvesting previously invested
@@ -111,16 +113,17 @@ sufficiently close numerical results.
 \end{figure}
 
 Figure \ref{fig:comp02} shows the influence in rate as a result of the different
-kinds of compounding. Furthermore, table \ref{tab:cmptable} gives an overview of
-the relation between compounding functions and time steps.It should be evident to 
-the reader that the notion of linear continuously compounded interest rate is 
-absurd, as we derive it from equation \ref{eq:expcomp}.
+kinds of compounding. Note that the return of the different compounding methods
+diverges after the first year. Furthermore, table \ref{tab:cmptable} gives an 
+overview of the relation between compounding functions and time steps.It should 
+be evident to the reader that the notion of linear continuously compounded interest
+rate is absurd, as we derive it from equation \ref{eq:expcomp}.
 
 \begin{center}  
 \begin{longtable}{|r|c|c|}
 \hline  
 \backslashbox{Time}{Compounding}
-           &Linear\footnote{Also referred to as a \emph{simple} rate} & Exponential\\\hline
+           &Linear\footnote{Also referred to as a \emph{simple} rate.} & Exponential\\\hline
 Discrete   & Flat   & Periodic\\\hline
 Continuous & \textcolor{red}{\xmark} & Continouous\\\hline
 \caption{Compounding and time steps.}
@@ -140,18 +143,23 @@ newtype SimpleRate     = SimpleRate Rate deriving (Show)
 data ExponentialRate   = ExponentialRate Rate Frequency deriving (Show)
 \end{hscode}
 
+The simplicity of the types come at the of the assumption that all rates are
+annualized. This way, we only require a \texttt{Frequency} (an integer) to
+denoting number of times interest is compounded per year in the
+\texttt{ExponentialRate} type.\\
 Using the Haskell type system we can make sure that a continuously compounded
 rate is not mistakenly used in a function that expects a simple rate.
 Note that \texttt{newtype} does not exacerbate overhead.\\
 
-As we will see, it is often
-Wishing to unify these different kinds of rates we have modelled an
-\texttt{InterestRate} class that allows for abstraction of the underlying rate:
+As we will see, it is often convenient to convert a rate such as the ones above
+into equivalent a simple rate. We have therefore chosen to model an
+\texttt{InterestRate} class that defines a number of methods, allowing for
+abstraction of the underlying rate:
 
 % TODO : Explain the Daycount convention + Calendar
 
 \begin{hscode}
-type Offset         = Double -- offset in years
+type Offset = Double -- offset from today in years
 type Factor = Double
 class InterestRate r where
   -- | Returns the corresponding continuously compounded rate
@@ -164,9 +172,18 @@ class InterestRate r where
   rate           :: r -> Rate
 \end{hscode}
 
-It defines an interface for retrieval of rates regardless of the underlying
-data type. As mentioned, advanced fixed income modelling and options pricing
-often use the continuously compounded rates due to its mathematical 
+A central tenet of our architecture is that we keep the backend
+as simple as possible and keep the interface detailed and 
+self-explanatory. This way we keep the mathematical formulas as transparent
+and clean as possible while the interface remains user-friendly. An example
+of this is the \texttt{Offset} type, which indicates a point in 
+time relative to today, measured in years. For instance an offset of $0.5$
+means six months from today. As offsets are much easier to work with we may 
+avoid involving our calendar module entirely. This module will be described
+together with the interface in section \ref{sec:fi}.\\
+
+Further, as we mentioned above, advanced fixed income modelling and options 
+pricing often use the continuously compounded rates due to its mathematical 
 properties\cite{HULL}. The \texttt{continuousRate} function caters to this
 need, as it essentially solves the following equation for $R_C^n$:
 
@@ -275,9 +292,10 @@ the decision to invest directly depends on what alternatives are available.
 Assuming resources are limited, it may quickly become difficult to asses which
 option is opportune if the market offers multiple choices. As the discount factor
 is just the inverse of the interest rate, \texttt{discountFactor} is part of the
-interface for interest rates. 
+interface for interest rates.\\
 
-Again we refer the reader to the \hql documentation\cite{hqldoc} for more information.
+Again we refer the reader to the documentation\cite{hqldoc} for examples of
+how this is done in \hql.\\
 
 Since we must consider all options to maximize our profits, we must somehow have an
 overview of the interest rates currently offered in the market. This leads us onto the
@@ -288,9 +306,12 @@ next key element in pricing theory, namely the term structure of interest rates.
 A term structure can be viewed as a function f that given a tenor returns 
 an interest rate. Since these are zero rates, term structures are valuable 
 tools in finance as we may use them to discount any cashflow regardless how it
-was generated. The converse is not true, we cannot use the rate over the tenor
-of a serial to discount a future income stream, unless that follows the exact
-same cash flow pattern.\\
+was generated.
+
+\ab{What do}
+%The converse is not true, we cannot use the rate over the tenor
+%of a serial to discount a future income stream, unless that follows the exact
+%same cash flow pattern.\\
 
 \begin{figure}[h!]
 \begin{center}
@@ -303,7 +324,7 @@ same cash flow pattern.\\
 
 % Draw axes
 \draw[->] (origo) -- (xaxis) node[right] {Time to maturity};
-\draw[->] (origo) -- (yaxis) node[above] {Interest rate};
+\draw[->] (origo) -- (yaxis) node[above] {Interest rate\footnote{Recall that \hql assumes annual rates.}};
 
 % Flat TS
 %\draw[thick,draw=blue] (0,1.5) -- (10,1.5);
@@ -331,7 +352,7 @@ same cash flow pattern.\\
 \end{center}
 \end{figure}
 
-A logarithmic shaped term structure as shown in \ref{fig:anc} characterizes a
+A term structure of logarithmic shape as shown in \ref{fig:anc} characterizes a
 "normal" market, where the return on an investment increases in some proportion
 to the time you have tied up your funds\footnote{In reality, the shape depends on 
 socio-economic factors such as growth or decline in the economy.}.\\
@@ -346,54 +367,44 @@ be up to par with what a bank can offer?).\\
 
 Turning to \hql, we need term structures to be able to price our cashflows.
 Like interest rates, term structures come in different flavours and we 
-have therefore also defined a type class to represent them:
+have therefore also defined a data type to represent them:
 
 \begin{hscode}
-class TermStructure a where
-  -- | Returns the yield for a maturity
-  yieldAt :: a -> Maturity -> Maybe Rate
-
-  -- | Returns the discount factor at an offset
-  dfAt :: a -> Maturity -> Maybe Rate
-  dfAt a m = fmap recip $ yieldAt a m
- 
-  -- | Returns the discount factor at an offset
-  fwdRate :: a -> Maturity -> Maturity -> Maybe DiscountFactor
-  fwdRate a m0 m1 = (/) <$> dfAt a m1 <*> dfAt a m0
-  
-  -- | Returns the discount factors given a list of offsets
-  dfsAt :: a -> [Maturity] -> [Maybe Rate]
-  dfsAt a = map (dfAt a)
+-- | A term structure is a yield curve constructed of
+--- solely of zero rates.
+data TermStructure = DiscreteTermStructure (Map Maturity Rate)
+                   | AnalyticalTermStructure (Offset -> Rate)
+                   | LinearInterpolatedTermStructure (Map Maturity Rate)
 \end{hscode}
 
+\ab{Do we need to import \texttt{Data.List}?}
+
+To better understand our data types we have shown them in figure \ref{fig:tstypes},
+where we see that the \texttt{dfAt} is only defined at certain points in time for
+a discrete term structure. Our \texttt{LinearInterpolatedTermStructure} is similar,
+except it uses linear interpolation to estimate a term structure.
+Finally, The analytical term structure is simply a function with domain $\mathcal{R}^+_0$
+that maps an offset from valuation date to a zero interest rate over the given
+period. This is necessary to represent a Nelson-Siegel generated function\cite{cmunk}.
+
+In addition, we have defined the following functions to look up interest rates
+or compute discount factors:
+
+\begin{hscode}
+type Factor = Double
+-- | Returns the yield for a maturity
+yieldAt :: TermStructure -> Maturity -> Maybe Rate
+-- | Returns the discount factor at an offset
+dfAt :: TermStructure -> Maturity -> Maybe Rate -- discount factor
+-- | Returns the forward rate given two offsets
+fwdRate :: TermStructure -> Maturity -> Maturity -> Maybe Factor
+\end{hscode}
 
 For instance, \texttt{yieldAt} function applied to the term structure in
 figure \ref{fig:anc} with an offset of 3.5 years\footnote{Note that we use
 offsets from today as it greatly simplifies the implementation. The coming 
 sections will make this choice apparent.} would produce $2.4\%$. We have
 defined the following data types that are instances of the class above:
-
-\begin{hscode}
-newtype DiscreteTermStructure
-  = DiscreteTermStructure (M.Map Maturity Rate)
-newtype LinearInterpolatedTermStructure
-  = LinearInterpolatedTermStructure (M.Map Maturity Rate)
-newtype AnalyticalTermStructure
-  = AnalyticalTermStructure (Offset -> Rate)
-\end{hscode}
-
-To better understand our data types we have shown them in figure \ref{fig:tstypes},
-where we see that the \texttt{dfAt} is only defined at certain points in time for
-a discrete term structure. Our \texttt{LinearInterpolatedTermStructure} is similar,
-except it uses linear interpolation to estimate a term structure. \ab{Need Munk's
-perspective on this!}
-Finally, The analytical term structure is simply a function with domain $\mathcal{R}^+_0$
-that maps an offset from valuation date to a zero interest rate over the given
-period. When dealing with approximation\cite{cmunk} such functions become useful.
-The reader should note that an interest rate with offset zero (that is, today) is
-always zero, since nobody would be willing to lend you money for a single day.
-Due to the inverse relation of interest rates and discount factors, the discount factor
-today is always 1.
 
 \begin{figure}[h!]
 \begin{center}
@@ -457,18 +468,22 @@ today is always 1.
 \end{center}
 \end{figure}
 
-Moreover, the \texttt{TermStructure} class defines a forward rate function,
-\texttt{fwdRate}, which is the implied future zero rates. There is no
-conceptual leap required to understand these, as they are simply interest
-rates in the future, hence the type signature requiring two offsets.
+The reader should note that an interest rate with offset zero (that is, today) is
+always zero, since nobody would be willing to lend you money for a single day.
+Due to the inverse relation of interest rates and discount factors, the discount factor
+today is always 1.
 
+Moreover, the forward rate function, \texttt{fwdRate}, is used to obtain the 
+implied future zero rates. There is no conceptual leap required to understand 
+these, as they are simply interest rates in the future, hence the type 
+signature requiring two offsets.\\
 Notwithstanding, their usefulness is may not be evident. 
 Imagine three points in time, $d_0$ - today - and two
 offsets in the future $d_1$ and $d_2$. We are then tasked with finding out
 what the interest rate between $d_1$ and $d_2$, $R_{12}$ would be. Despite not 
 knowing whether the interest rate will increase or decrease we may specify 
-this by introducing \emph{arbitrage}. In brief, \emph{arbitrage} is the
-assumption it is not possible to buy and sell the same good and turn a 
+this by introducing \emph{arbitrage}. In brief, no arbitrage is the
+assumption it is not possible to buy and sell the same good and turn a
 profit i.e. "free money". Given annual rates we can now claim the following:
 
 \begin{equation}
@@ -482,21 +497,20 @@ prevailing interest rates.
 
 % TODO more
 
-\section{Fixed Income}
+\section{Fixed Income}\label{sec:fi}
 
-Now that we have cemented the basics of interest rates we will look at 
-where they are applied, namely in which financial instruments. In this section
-we will go through how we have modelled the subset of products called 
-\emph{fixed income}, of which bonds are the bread and butter.\\
-They are financial securities that promises the bond holder a
-stream of future payments. These play a huge role in the financial markets are
-are typically only offered by governments or large financial institutions.\\
-
+Now that we have cemented the basic theory of interest rates, discounting
+and term structures we turn to their application in financial instruments.
+In this section we will go through how we have modelled the subset of products 
+in the \emph{fixed income} category, of which a product called bonds are 
+the bread and butter. In brief, a bond is a financial security that promises
+the bond holder a stream of future payments. These play a huge role in the 
+financial markets are are typically only offered by governments or large 
+financial institutions.\\
 We will present our \texttt{FixedIncome} module by means of a running example
-of a bond. 
-A \emph{serial} is an example of a bond that equates to a typical Danish house
-loan. The cash flow of the holder of a 5 year serial with annual repayments is
-depicted in figure \ref{fig:serialcf}.\\
+of a bond.  A \emph{serial} is an example of a bond that equates to a typical 
+Danish house loan. The cash flow of the holder of a 5 year serial with annual 
+repayments is depicted in figure \ref{fig:serialcf}.\\
 
 \begin{figure}[h!]
 \begin{center}
@@ -557,11 +571,18 @@ coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified
 tenor and interest rate that pays a fixed amount at maturity. We have designed 
 a class to encapsulate the functionality of bonds:
 
+%%% Haskell %%%
+
+A central tenet of our architecture is that we keep the backend
+as simple as possible and keep the interface detailed and 
+self-explanatory. This way we keep the mathematical formulas as transparent
+and clean as possible while the interface remains user-friendly. This
+manifests itself in that our interest rate model does not use dates.
+
+%%% Explain the Bond class %%%
 \begin{hscode}
 -- | Bond class specifies common denominator for all bond types 
 class Instrument b => Bond b where
-  -- | Returns the present value of the bond
-  pv           :: TermStructure ts => b -> ts -> IO Cash
   -- | Returns clean or dirty price on a given date
   clean, dirty :: TermStructure ts => b -> ts -> Date -> Cash
   -- | Interest accrued up to a specific date
@@ -579,108 +600,26 @@ class Instrument b => Bond b where
   paymentDates :: b -> [Date]
 \end{hscode}
 
-% Explain the Bond class
+%%% Explain bond types %%%
 
+%%% Explain the Instrument class %%%
 \begin{hscode}
 -- | Instrument is a high-level class for financial instruments
 class Instrument i where
+  -- | Is the instrument expired?
   expired :: i -> IO Bool
+  -- | Underlying model required for pricing
+  type PricingEngine :: *
+  -- | Returns the present value of the instrument
+  pv           :: i -> PricingEngine -> IO Cash
 \end{hscode}
 
-% Explain the Instrument class
-
-% Explain the Amortized class
-
-Appendix \ref{sec:appbonds} shows the data types that we have created
-to represent the various flavours of bonds.\\ 
-
-A central tenet of our architecture is that we keep the backend
-as simple as possible and keep the interface detailed and 
-self-explanatory. This way we keep the mathematical formulas as transparent
-and clean as possible while the interface remains user-friendly.\\
-
-% Talk about front-end
-
-% Discuss lists/backend representation
-% Jost said use "array"...???
+%%% Explain bond instances of Instrument %%%
+    % Discuss lists/backend representation
 
 % TODO Write that very few methods belong in the Instrument class,
 % just like in Quantlib!
 
-\begin{center}
-\texttt{<< Insert description of the class hierarchy and the awesomeness of
-lists >>}\\
-\end{center}
-
-\ab{Discounting part needs to be intertwined with more Haskell goodness}.
-
-Discounting in \hql can be seen as taking the dot product between the discount
-factors and the cash flows at each point in time,
-
-\[
-p(0) = \mathbf{df}\cdot\mathbf{cf}
-\]
-
-Where the vector of discount factors, $\mathbf{df}$, and cash flow vector, $\mathbf{cf}$ are represented as
-
-\[
-\mathbf{df} = (p(t,T_1), ..., p(t,T_n)),
-\]
-\[
-\mathbf{cf} = (c_1, ..., c_i).
-\]
-
-The fact that we model all bonds as list of zeros allows us to easily discount 
-all bonds in the same manner. A functional programmer will already be thinking 
-of this as a simple \texttt{map}, which is exactly how it is modelled in HQL.\\
-
-For example, if we were to calculate the present value of a series of future cash flows,
-	\[
-	\mathbf{cf} = (\$1000.00,\$1500.00,\$1000.00,\$2000.00)
-	\]
-	We can multiply by the discount function with $T_n=n$ years and the rate at 5.00\% continuously compounded,
-	\[
-	p(0) = \mathbf{df}\cdot\mathbf{cf} = (e^{-rT_1},...,e^{-rT_n})\cdot(p(0,T_1), ...,p(0,T_4))=
-	\]
-	\[
-	(e^{-0.05\cdot1},e^{-0.05\cdot2},e^{-0.05\cdot3},e^{-0.05\cdot4}) \cdot (\$1000.00,\$1500.00,\$1000.00,\$2000.00)=
-	\]
-	\[
-	(\$951.23,\$1357.26,\$860.71,\$1637.46)
-	\]
-
-	The above calculation is done in HQL using the function \textit{zipWith} taking the discount function and the list of future cash flows as arguments.
-	\vskip 0.5\FrameSep
-	\begin{lstlisting}
-	HQL> zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
-	\end{lstlisting}
-	\vskip 0.5\FrameSep
-	yields the following output:
-	\vskip 0.5\FrameSep
-	\begin{lstlisting}[style=Output]
-	[951.229424500714,1357.2561270539393,860.7079764250578,1637.4615061559637]
-	\end{lstlisting}
-	\vskip 0.5\FrameSep
-	A slightly modified version will return the sum of the cash flows. This is the basis of bond pricing, which is covered in section \nameref{sec:fi}.
-	\vskip 0.5\FrameSep
-	\begin{lstlisting}
-	HQL> sum $ zipWith (*) (discountFactors (interestRate Continuous 5.0) 5 4 <*> pure 0) [1000,1500,1000,2000]
-	\end{lstlisting}
-	\vskip 0.5\FrameSep
-	yields the following output:
-	\vskip 0.5\FrameSep
-	\begin{lstlisting}[style=Output]
-	4806.655034135675
-	\end{lstlisting}
-
-The interest rates have hitherto been fixed scalars combined with a compounding 
-method. However, so-called floating rate bonds also exist, where the interest 
-rate is changed at regular intervals according to some entity such as the 
-LIBOR\footnote{Note that floating rate bonds are still considered fixed 
-income since the payments still fall on the payment dates regardless of the 
-actual amount.}. The cashflow generation for these bonds relies on simulation, 
-but the discounting is exactly the same as for fixed rate bonds.\\
- 
 \section{Options, Futures and other Derivatives}
 
 In this section we describe how our architecture caters to other financial 
