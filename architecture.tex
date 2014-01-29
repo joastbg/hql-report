@@ -503,7 +503,7 @@ Now that we have cemented the basic theory of interest rates, discounting
 and term structures we turn to their application in financial instruments.
 
 We have defined an \texttt{Instrument} class to represent the high-level
-unctionality that all financial instruments must share:
+functionality that all financial instruments must share:
 
 %%% Explain the Instrument class %%%
 \begin{hscode}
@@ -514,7 +514,7 @@ class Instrument i where
   -- | Underlying model required for pricing
   type PricingEngine :: *
   -- | Returns the present value of the instrument
-  pv      :: i -> PricingEngine -> IO Cash
+  pv :: i -> PricingEngine -> IO Cash
 \end{hscode}
 
 We require an associated type to represent a pricing engine since we
@@ -634,7 +634,7 @@ The \texttt{cashflow} function generates a list of payments exactly as shown
 in figure \ref{fig:serialcf} while \texttt{coupons} generates only the coupon
 payments.
 A serial is an example of an \emph{amortized} bond, meaning that the writer
-of a serial (the person who initially loaned the money) receives repayments over
+of a serial (the person who initially lended the money) receives repayments over
 the lifetime of a bond. As these loan-based bonds come in multiple flavours
 we have therefore created an \texttt{Amortized} class:
 
