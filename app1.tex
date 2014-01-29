@@ -1,49 +1,50 @@
-\chapter{Deliverables}
+\chapter{Contributions}\ref{chap:contrib}
 
-\section{Bond data types}\label{sec:appbonds}
+\newcounter{treeline}
 
-\begin{hscode}
-data FixedCouponBond where
-  Zero   :: { fsett :: Date,
-              fmatu :: Date,
-              fface :: Cash,
-              frate :: Double,
-              fdcc  :: (DayCount d) => d,
-              froll :: RollConvention } -> FixedCouponBond
-  Consol :: { fsett :: Date,
-              fface :: Cash,
-              frate :: Double,
-              fstms :: Settlements,
-              fdcc  :: (DayCount d) => d,
-              froll :: RollConvention } -> FixedCouponBond
-  Bullet :: { fsett :: Date,
-              fmatu :: Date,
-              fface :: Cash,
-              frate :: Double,
-              fstms :: Settlements,
-              fdcc  :: (DayCount d) => d,
-              froll :: RollConvention } -> FixedCouponBond
-\end{hscode}
+\newcommand{\treeroot}[1]{% Title
+\node[above] at (0,0) {#1};%
+\setcounter{treeline}{0}
+}
 
-\begin{hscode}
-data FixedAmortizedBond where 
-  Annuity :: { asett :: Date,
-               amatu :: Date,
-               aface :: Cash,
-               arate :: Double,
-               astms :: Settlements,
-               adcc  :: (DayCount d) => d,
-               aroll :: RollConvention } -> FixedAmortizedBond
-  Serial :: {  asett :: Date,
-               amatu :: Date,
-               aface :: Cash,
-               arate :: Double,
-               astms :: Settlements,
-               adcc  :: (DayCount d) => d,
-               aroll :: RollConvention } -> FixedAmortizedBond
-\end{hscode}
+\newcommand{\treeentry}[2]{% Title, Level
+\draw[->] (#2-1,-\value{treeline}/2) -- (#2-1,-\value{treeline}/2-0.5) -- (#2+0.5,-\value{treeline}/2-0.5) node[right] {#1};
+\stepcounter{treeline}
+}
 
-\section{Formula sheet}
-\section{Payoff diagrams}
-\section{Example code}
-\section{Documentation}
+\newcommand{\altentry}[2]{% Title, Level
+\draw[->] (#2-1,-\value{treeline}/2) -- (#2-1,-\value{treeline}/2-0.5) -- (#2+0.5,-\value{treeline}/2-0.5) node[right] {#1};
+\foreach \x in {1,...,#2}
+{   \draw (\x-1,-\value{treeline}/2) -- (\x-1,-\value{treeline}/2-0.5);
+}
+\stepcounter{treeline}
+}
+
+\textcolor{blue}{Andreas Bock}\\
+\textcolor{green}{Johan Astborg}\\
+\textcolor{red}{Both}\\
+
+\begin{tikzpicture}
+\tt
+\treeroot{src}
+\treeentry{Instruments}{1}
+\treeentry{\color{blue} Instrument.hs}{2}
+\treeentry{FixedIncome}{2}
+\treeentry{Bonds}{3}
+\treeentry{\color{blue} Bonds.hs}{4}
+\treeentry{Utils}{2}
+\treeentry{\color{green} InterestRate.hs}{2}
+\treeentry{\color{red} TermStructure.hs}{2}
+\treeentry{Derivatives}{2}
+\treeentry{\color{blue} Derivatives.hs}{3}
+\treeentry{Equity}{2}
+\treeentry{OTC}{2}
+
+\treeentry{Pricing}{1}
+\treeentry{Utils}{1}
+\treeentry{\color{blue} Calendar.hs}{2}
+\treeentry{\color{red} Currency.hs}{2}
+\treeentry{\color{blue} DayCount.hs}{2}
+\treeentry{Graphics}{2}
+\treeentry{\color{green} Visualize.hs}{3}
+\end{tikzpicture}

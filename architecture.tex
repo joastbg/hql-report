@@ -324,7 +324,7 @@ was generated.
 
 % Draw axes
 \draw[->] (origo) -- (xaxis) node[right] {Time to maturity};
-\draw[->] (origo) -- (yaxis) node[above] {Interest rate\footnote{Recall that \hql assumes annual rates.}};
+\draw[->] (origo) -- (yaxis) node[above] {Annual rate};
 
 % Flat TS
 %\draw[thick,draw=blue] (0,1.5) -- (10,1.5);
@@ -377,7 +377,7 @@ data TermStructure = DiscreteTermStructure (Map Maturity Rate)
                    | LinearInterpolatedTermStructure (Map Maturity Rate)
 \end{hscode}
 
-\ab{Do we need to import \texttt{Data.List}?}
+\ab{Do we need to import \texttt{Data.Map}?}
 
 To better understand our data types we have shown them in figure \ref{fig:tstypes},
 where we see that the \texttt{dfAt} is only defined at certain points in time for
@@ -497,10 +497,49 @@ prevailing interest rates.
 
 % TODO more
 
-\section{Fixed Income}\label{sec:fi}
+\section{Instruments}\label{sec:instruments}
 
 Now that we have cemented the basic theory of interest rates, discounting
 and term structures we turn to their application in financial instruments.
+
+We have defined an \texttt{Instrument} class to represent the high-level
+unctionality that all financial instruments must share:
+
+%%% Explain the Instrument class %%%
+\begin{hscode}
+-- | Instrument is a high-level class for financial instruments
+class Instrument i where
+  -- | Is the instrument expired?
+  expired :: i -> IO Bool
+  -- | Underlying model required for pricing
+  type PricingEngine :: *
+  -- | Returns the present value of the instrument
+  pv      :: i -> PricingEngine -> IO Cash
+\end{hscode}
+
+We require an associated type to represent a pricing engine since we
+cannot price all instruments in a similar fashion.\\
+Due to the high-level nature of this class, very few methods qualify.
+It is interesting to note that \hql defines the
+exact same two functions as Quantlib's \texttt{Instrument}
+class\cite{implql}. Also, Quantlib has an equivalent \texttt{PricingEngine}
+class to cater for the need of different pricing methods for different
+products.\\
+
+\begin{figure}[!h]
+\centering
+\includegraphics[scale=.3]{images/classhier.png}
+\caption{Type class architecture.}
+\label{fig:classhier}
+\end{figure}
+
+In the coming sections we shall delve into the specific instruments and
+describe their implementations. We refer the reader to figure \ref{fig:classhier}
+for and overview of the classes we have defined. The arrows denote type class
+constraints e.g. a \texttt{Bond} must be an instance of \texttt{Instrument}.
+
+\section{Fixed Income}\label{sec:fi}
+
 In this section we will go through how we have modelled the subset of products 
 in the \emph{fixed income} category, of which a product called bonds are 
 the bread and butter. In brief, a bond is a financial security that promises
@@ -508,11 +547,11 @@ the bond holder a stream of future payments. These play a huge role in the
 financial markets are are typically only offered by governments or large 
 financial institutions.\\
 We will present our \texttt{FixedIncome} module by means of a running example
-of a bond.  A \emph{serial} is an example of a bond that equates to a typical 
+of a bond. A \emph{serial} is an example of a bond that equates to a typical 
 Danish house loan. The cash flow of the holder of a 5 year serial with annual 
 repayments is depicted in figure \ref{fig:serialcf}.\\
 
-\begin{figure}[h!]
+\begin{figure}[!h]
 \begin{center}
 \begin{tikzpicture}[-,shorten >=1pt,auto,node distance=1.5cm,thick,minimum size=0.8cm,main node/.style={circle,draw=red,very thick}]
 \tikzstyle{selected edge} = [draw,line width=6pt,-,blue!30]
@@ -568,25 +607,16 @@ bond, and are decreasing as a result of the repayment amortization\cite{hqldoc}.
 
 In addition to the serial, we present the most basic bond imaginable, the zero 
 coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified 
-tenor and interest rate that pays a fixed amount at maturity. We have designed 
-a class to encapsulate the functionality of bonds:
+tenor and interest rate that pays a fixed amount at maturity.\\
 
-%%% Haskell %%%
-
-A central tenet of our architecture is that we keep the backend
-as simple as possible and keep the interface detailed and 
-self-explanatory. This way we keep the mathematical formulas as transparent
-and clean as possible while the interface remains user-friendly. This
-manifests itself in that our interest rate model does not use dates.
+We have designed a class to encapsulate the functionality of bonds:
 
 %%% Explain the Bond class %%%
 \begin{hscode}
 -- | Bond class specifies common denominator for all bond types 
 class Instrument b => Bond b where
-  -- | Returns clean or dirty price on a given date
-  clean, dirty :: TermStructure ts => b -> ts -> Date -> Cash
-  -- | Interest accrued up to a specific date
-  ai           :: b -> Date -> Cash
+  -- | Returns dirty price on a given date
+  dirty :: TermStructure ts => b -> ts -> Date -> Cash
   -- | Principal (or face value) of a bond
   principal    :: b -> Cash
   -- | A list of Payments indicating remaining cashflow
@@ -600,37 +630,92 @@ class Instrument b => Bond b where
   paymentDates :: b -> [Date]
 \end{hscode}
 
-%%% Explain bond types %%%
+The \texttt{cashflow} function generates a list of payments exactly as shown
+in figure \ref{fig:serialcf} while \texttt{coupons} generates only the coupon
+payments.
+A serial is an example of an \emph{amortized} bond, meaning that the writer
+of a serial (the person who initially loaned the money) receives repayments over
+the lifetime of a bond. As these loan-based bonds come in multiple flavours
+we have therefore created an \texttt{Amortized} class:
 
-%%% Explain the Instrument class %%%
 \begin{hscode}
--- | Instrument is a high-level class for financial instruments
-class Instrument i where
-  -- | Is the instrument expired?
-  expired :: i -> IO Bool
-  -- | Underlying model required for pricing
-  type PricingEngine :: *
-  -- | Returns the present value of the instrument
-  pv           :: i -> PricingEngine -> IO Cash
+class Amortized a where
+  TODO
 \end{hscode}
 
-%%% Explain bond instances of Instrument %%%
-    % Discuss lists/backend representation
+\texttt{repayments} now generate the blue repayment part of the cashflow
+we observe in figure \ref{fig:serialcf}.\\
 
-% TODO Write that very few methods belong in the Instrument class,
-% just like in Quantlib!
+Returning to our serial example, we have defined a data type for fixed coupon
+amortized bonds using a Haskell generalized algebraic data type (GADT):
+
+\begin{hscode}
+data FixedAmortizedBond where 
+  Annuity :: { asett :: Date,
+               amatu :: Date,
+               aface :: Cash,
+               arate :: Double,
+               astms :: Settlements,
+               adcc  :: (DayCount d) => d,
+               aroll :: RollConvention } -> FixedAmortizedBond
+  Serial :: {  asett :: Date,
+               amatu :: Date,
+               aface :: Cash,
+               arate :: Double,
+               astms :: Settlements,
+               adcc  :: (DayCount d) => d,
+               aroll :: RollConvention } -> FixedAmortizedBond
+\end{hscode}
+
+where the fields are explained in table \ref{tab:fields}.
+
+\begin{center}  
+\begin{longtable}{l|l|l}
+Field & Meaning & Usage\\\hline
+\texttt{asett} & Settlement date & Start date for interpolation\\
+\texttt{amatu} & Maturity date & End date for interpolation\\
+\texttt{aface} & Face Value & Used to compute repayment and coupons\\
+\texttt{astms} & Settlements per Year & Used to generate payment dates\\
+\texttt{adcc} & Daycount convention & Used in discounting\\
+\texttt{aroll} & Roll convention & Resolves illegal payment dates (e.g. weekends)\\
+\caption{\texttt{FixedAmortizedBond} fields}
+\end{longtable}
+\label{tab:fields}
+\end{center}
+
+Note that although the \texttt{Annuity} loan has the same fields as our serial,
+we need a separate constructor for it as the cashflow generation is completely
+different for this bond type\cite{hqldoc}. In addition to the zero and amortized
+bonds, \hql also feature a consol and bullet bond. We refer to appendix?
+
+%%% Haskell %%%
+A central tenet of our architecture is that we keep the backend
+as simple as possible and keep the interface detailed and 
+self-explanatory. This way we keep the mathematical formulas as transparent
+and clean as possible while the interface remains user-friendly.\\
+
+The backend for pricing bonds exploits the fact that all instances must define
+the \texttt{cashflow} function. As we saw in section \ref{sec:discounting},
+pricing a cashflow is simply multiplication by a discount factor. This means
+that pricing a bond $b$ can be formulated as follows:
+
+\begin{equation}
+PV_b = \sum_{k=0}^n df_k cf_k
+\end{equation}
+
+where $cf_k$ and $df_k$ denote a cashflow or discount factor at time $k$,
+respectively. As a result, the backend for bond pricing is implemented as:
+
+\begin{hscode}
+pv = sum $ zipWith (*) cashflowList discountFactors
+\end{hscode}
 
 \section{Options, Futures and other Derivatives}
 
 In this section we describe how our architecture caters to other financial 
 products in addition to the fixed income instruments we have seen.\\
 
-We present our design of \hql's class instrastructure in figure \ref{fig:classhier}.
-The arrows indicate class constraints, e.g. an instance of \texttt{Bond}
-must also be an instance of \texttt{Instrument}. As many of the different
-products represented by classes have been scoped out of the project, we shall only
-give a brief description of their traits and instead focus of the architectural
-aspects.\\
+Figure
 
 First of all, a natural next step in the development of HQL is the 
 implementation of derivatives which is itself a product relying on another- the 
@@ -642,13 +727,6 @@ the underlying directly affects the value of having entered such an agreement.\\
 However, with the addition of floating rate bonds, we may model fixed income 
 derivatives such as swaps. A swap is contract in which two counterparties agree 
 to exchange two cashflows.
-
-%\begin{figure}[!htb]
-%\centering
-%\includegraphics[scale=.7]{lz.png}
-%\caption{Type class architecture.}
-%\label{fig:classhier}
-%\end{figure}
 
 %Fixed
 %Floating

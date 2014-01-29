@@ -2,17 +2,22 @@
 
 As we set out to design the architecture of \hql, our project is naturally far 
 from a fully-fledged library, and many more modules must be added. Below we
-describe the next steps that should be taken in the development of \hql.
+describe our view of the next steps that should be taken in the development
+of \hql.
 
-\section{Environment}
+\section{Observables}
 
-Our current design does not solve the problem of 
-It is desirable to wrap our computations in a monad, alleviating the need for
-us to pass a term structure to all pricing functions.
-Further, our \texttt{}
+As we saw in the introductory section, the value of financial instruments
+all share one dependency, market data. For stock options it is necessary 
+to get market prices, and for fixed income we study the term structure of
+interest rates to discount our cashflows. In other words, this data is 
+external to the models we use.\\
+
+Therefore it is desirable to wrap our computations in a monad that allows us
+to structure our program in a pure manner.
 
 \begin{hscode}
-PricingEngine
+Things
 \end{hscode}
 
 \section{Floating rates}
@@ -84,10 +89,9 @@ curves, making it possible to discount any cash flow according to the
 prevailing interest rates.
 \cite{HULL} provides excellent description of how bootstrapping is performed.
 
-Regarding term structures, Munk\cite{cmunk} presents several methods of 
-approximating
-a term structure by means of cubic splines or the Nelson-Siegel method. An 
-interesting project could set out to investigate the feasibility of added such 
+Further, Munk\cite{cmunk} presents several methods of determining a discount
+function by means of cubic splines or term structures by the Nelson-Siegel method. 
+An interesting project could set out to investigate the feasibility of adding such 
 functionality to \hql.
 
 Another interesting extension is to implement a way of generating yield curves 
