@@ -1,4 +1,4 @@
-\chapter{Architecture}
+\chapter{Key Concepts and Architecture}
 
 In this section we will go through the architecture of HQL and describe how we
 modelled the various of financial instruments in Haskell. We shall introduce
@@ -8,11 +8,12 @@ the necessary mathematical finance and conventions as we go along.
 
 Functional languages lend themselves well to the domain of finance due
 to several reasons such as modularity\cite{hughes:matters-cj}, 
-laziness\cite{composingcontracts}[Section 5.3]. Moveover, the mathematical
+laziness\cite{composingcontracts}. Moveover, the mathematical
  nature of finance makes functional languages suitable for valuation due its
 inherent mathematical foundation and purity.\\
 
-Haskell's advanced type system helps ensure that your code is safe, and its 
+Haskell's advanced type system eliminate a whole class of bugs related to 
+type errors and its 
 class system allows us to define type-safe interfaces for operations on 
 financial products who themselves can be represented by Haskell data types. 
 Statically typed languages have the advantage of discovering a multitude of
@@ -20,39 +21,71 @@ errors at compile time, and the type class system enables us to overload
 functionality in our programs based on our types. This is a very desirable
 feature, as we want our financial products to have the same API (e.g. a function 
 called \texttt{presentValue} should return the present value regardless of the
-product type).
+product type).\\
+
+Figure \ref{fig:overview} shows an overview of the entities we are dealing with
+and situaion we wish to model. Ultimately, each item in this figure must somehow
+be represented in Haskell using a class or type depending on the the item.
+
+We want to model what we call a pricing engine, which combines the 
+these contracts and mathematical models with the current state of the world
+in order to produce meaningful measurements of said contract.\\
+
+\begin{figure}[!htb]
+\centering
+%\includegraphics[scale=0.6]{images/Overview.pdf}
+\caption{Overview of quantitative finance.}
+\label{fig:overview}
+\end{figure}
+
+Therefore, we must model the contracts, the models, and the external world.
+We shall begin with the modelling aspects and provide the reader with the
+matematical finance required. Thereafter we will present the contracts, and
+finally how such a pricing engine is modelled. 
+% TODO Huge image of concepts
 
 \section{Interest Rates}
 
 We begin our introduction to mathematical finance with a concept familiar to
 most, name interest rates. An interest rate is the the amount of return on
 investing an amount of money for a set amount of time. This can be formulated
-using a very simple equation, which we will demonstrate with a one year interest
-rate on a deposits account:
+using a very simple equation, which we will demonstrate with a one year flat
+interest rate on a deposits account:
 
 \begin{equation}\label{eq:lincomp}
 FV_T = N (1 + R_T)
 \end{equation}
 
-where $FV_T$ denotes the future value in $T$ time, $N$ is the nominal and $R_T$
-is the rate over the period $T$\footnote{$T$ is also referred to as the
-\emph{tenor}.}.) Extending this to multiple years (or periods) we introduce a new 
-concept called compound interest, which is  simply the formula above reapplied
-a number times. The intuitive approach is
+where $FV_T$ denotes the future value in $T=1$ periods, $N$ is the principal
+and $R_T$ is the rate over the period $T$\footnote{$T$ is also referred to as the
+\emph{tenor}.}.) Extending this to multiple years we introduce a new 
+concept called compound interest, which is simply the formula above reapplied
+a number of times. The intuitive approach is
 that the compound interest is the return from reinvesting previously invested
 capital. Mathematically, this return can be formulated as an exponentially 
 compounded interest rate:
 
 \begin{equation}\label{eq:expcomp}
-FV_T^n = N (1 + R_T)^n
+FV_{T_n} = N (1 + R_{T_n})^n
 \end{equation}
 
-where $FV$ is now dependent on the number of time it is compounded.
+where $FV$ is now dependent on the number of times it is compounded, and is 
+therefore also called periodic compounding.
 While this model is easy to understand, the world of finance demands much more 
-intricate details to correctly understand it. Firstly, it assumes 
+intricate details to correctly understand it. First, it assumes 
 discrete time periods, but we have not specified if this $n$ stands for days, 
-months, or years, or how what the tenor is. All of these intricacies are critical
-for correctness of \hql and must be accounted for in the implementation.\\
+months, or years, or how what the tenor is. Further, it assumes that compounding
+occurs at after every period, which is not necessarily so. For instance, the
+equation \ref{eq:expcomp2} with $n=1$ and $m=2$ describes the return on a one-year
+investment with semiannual compounding:
+
+\ab{Do dependency crap}
+\begin{equation}\label{eq:expcomp2}
+FV_{T_n}^{n,m} = N (1 + \frac{R_T}{m})^{mn}
+\end{equation}
+
+does not  All of these intricacies are critical for correctness of \hql and must
+be accounted for in the implementation.\\
 
 Up until this point we have assumed that the compounding is performed at 
 discrete intervals. However, as (1) is simply a formula, we may apply concepts 
@@ -61,16 +94,14 @@ rate. It is defined as the resulting interest rate when we take the limit of
 equation \ref{eq:expcomp} as $n$ goes to infinity:
 
 \begin{equation}
-\text{lim}_{n \rightarrow \infty}\; FV_T^n \; = \; N (1 + R_T)^n
+\text{lim}_{n \rightarrow \infty}\; FV_T^n \; = \text{lim}_{n \rightarrow \infty}\; N (1 + R_T)^n
 = N e^{RT}
 \end{equation}
 
-where $R$ is the continuously compounded interest rate.
-
-The motivation behind the continuously compounded interest rate is that it is
-much nicer to work with in more advanced fixed income modelling
-\cite{cmunk}[Chapter 1] and yields almost identical numerical results.\\
-\ab{This is in conflict with the other statement!}
+where $R$ is the continuously compounded interest rate. This rate is much easier
+to work with in advanced fixed income modelling\cite{cmunk}, as we can disregard
+the details concerning periods and compounding intervals. Further, it yields
+sufficiently close numerical results.
 
 \begin{figure}[!htb]
 \centering
@@ -89,7 +120,7 @@ absurd, as we derive it from equation \ref{eq:expcomp}.
 \begin{longtable}{|r|c|c|}
 \hline  
 \backslashbox{Time}{Compounding}
-           &Linear  & Exponential\\\hline
+           &Linear\footnote{Also referred to as a \emph{simple} rate} & Exponential\\\hline
 Discrete   & Flat   & Periodic\\\hline
 Continuous & \textcolor{red}{\xmark} & Continouous\\\hline
 \caption{Compounding and time steps.}
@@ -105,26 +136,30 @@ method as follows:
 \begin{hscode}
 type Rate = Double
 newtype ContinuousRate = ContinuousRate Rate deriving (Show)
-newtype SimpleRate     = SimpleRate Rate deriving (Show) -- zero rate
+newtype SimpleRate     = SimpleRate Rate deriving (Show)
 data ExponentialRate   = ExponentialRate Rate Frequency deriving (Show)
 \end{hscode}
 
 Using the Haskell type system we can make sure that a continuously compounded
-rate is not mistakenly used in a function that expects a zero rate.
+rate is not mistakenly used in a function that expects a simple rate.
 Note that \texttt{newtype} does not exacerbate overhead.\\
+
+As we will see, it is often
 Wishing to unify these different kinds of rates we have modelled an
 \texttt{InterestRate} class that allows for abstraction of the underlying rate:
 
+% TODO : Explain the Daycount convention + Calendar
+
 \begin{hscode}
 type Offset         = Double -- offset in years
-type DiscountFactor = Double
+type Factor = Double
 class InterestRate r where
   -- | Returns the corresponding continuously compounded rate
   continuousRate :: r -> ContinuousRate
   -- | Returns the discount factor at an offset
-  discountFactor :: r -> Offset -> DiscountFactor 
+  discountFactor :: r -> Offset -> Factor 
   -- | Reciprocal of the discount factor
-  compoundFactor :: r -> Offset -> DiscountFactor 
+  compoundFactor :: r -> Offset -> Factor 
   -- | Get the intrinsic rate
   rate           :: r -> Rate
 \end{hscode}
@@ -228,25 +263,6 @@ month tenor of the investment! We present the scenario pictorially in figure
 % "Legend"
 \draw[] (origo0) -- (origo0) node[below] {Jan 1$^{\text{st}}$};
 \draw[] (9.9,0) -- (9.9,0) node[below] {Dec 31$^{\text{st}}$};
-
-% Flat TS
-%\draw[thick,draw=blue] (0,1.5) -- (10,1.5);
-% "Normal" TS
-% Inverse TS
-%\draw[thick,draw=red] (0,5) parabola[bend at end] (10,0.5);
-
-%\draw[dotted] (3,2.53) -- (3,0) node[below] {\text{ 3.5 years}};
-%\draw[dotted] (3,2.53) -- (0,2.53) node[left] {2.4\%};
-
-% Legend
-%\filldraw[draw=black, fill=blue] (5.2,-1) rectangle node {} +(0.2,0.2);
-%\node at (6, -0.92) () {Flat};
-
-%\filldraw[draw=black, fill=green] (0,-1) rectangle node {} +(0.2,0.2);
-%\node at (1.55, -0.92) () {Logarithmic};
-
-%\filldraw[draw=black, fill=red] (3,-1) rectangle node {} +(0.2,0.2);
-%\node at (4.15, -0.92) () {Inverted};
 
 \end{tikzpicture}
 \caption{Two investment opportunities showing the time value of money.}
@@ -586,6 +602,10 @@ and clean as possible while the interface remains user-friendly.\\
 % Talk about front-end
 
 % Discuss lists/backend representation
+% Jost said use "array"...???
+
+% TODO Write that very few methods belong in the Instrument class,
+% just like in Quantlib!
 
 \begin{center}
 \texttt{<< Insert description of the class hierarchy and the awesomeness of
