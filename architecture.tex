@@ -589,6 +589,16 @@ products.\\
 \label{fig:classhier}
 \end{figure}
 
+We have defined a \texttt{Cash} data type as follows:
+
+\begin{hscode}
+data Currency = USD | EUR | GBP | CHF | JPY | DKK | SEK deriving (Show,Eq)
+data Cash = Cash Double Currency
+\end{hscode}
+
+which we have made an instance of \texttt{Num}, \texttt{Floating} for to
+allows us to abstract away the currencies in normal arithmetic operations.\\
+
 In the coming sections we shall delve into the specific instruments and
 describe their implementations. We refer the reader to figure \ref{fig:classhier}
 for an overview of the classes we have defined. The arrows denote type class
