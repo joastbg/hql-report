@@ -1,5 +1,7 @@
 \chapter{Background}
 
+\section{Financial Instruments}
+
 A financial security is a legal claim on a firm's asset or income 
 that is traded in an organized market\cite{alexander2008market}.
 A portfolio is a number of positions in such securities like common
@@ -10,8 +12,8 @@ These instruments are typically traded on an exchange such as
 \href{http://www.nasdaqomxnordic.com/}{NASDAQ OMX Nordic}, but so-called
 \emph{over-the-counter} (OTC) products also exist where two parties enter
 a unilateral, legally binding, trade.\\
-The value of such a collection can be computed to reflect the theoretical 
-value they would have if they existed today to allow investors to assess
+The value of an instrument can be computed to reflect the theoretical 
+value it would have if it existed today to allow investors to assess
 whether resources could yield higher returns elsewhere.\\
 
 Financial instruments are priced differently, some using closed-form functions
@@ -29,7 +31,6 @@ the cash value of the opportunity cost caused by having your funds tied up.\\
 Therefore an investor is able to gauge whether or not an investment will be
 fruitful by comparing the dividend with what he or she would receive by 
 depositing the money in the bank.\\
-
 % Discounting
 Implicitly, we have also introduced another concept called \emph{discounting},
 which is simply a way of pricing a future cashflow by removing the interest
@@ -38,7 +39,7 @@ in fixed income products become more advanced, the investor from above will
 face difficulties when trying to allocate his resources just by looking at the
 rates of the products. Discounting applies the time value of money to all
 future income to scale them back to the present, resulting in the price (or
-\emph{present value}) of the contract in question. 
+\emph{present value}) of the contract in question.\\
 
 % Credit risk
 In addition to the pricing mechanism presented above, we also briefly introduce
@@ -53,9 +54,6 @@ financial crisis of 2008 this has become increasingly important for financial
 institutions, and \href{http://www.lchclearnet.com/}{clearing houses} have
 been established to mitigate the 
 domino effect of collapses of large financial institutions.
-
-%In this project we seek to coalesce mathematical finance and software engineering
-%into a software tool set employed by .\\
 
 \section{Related work}
 
@@ -77,11 +75,14 @@ are approaching one year standstill.\\
 
 Peyton Jones and Eber\cite{composingcontracts} developed a combinator library 
 allowing users to define virtually any financial contract, making it a very
-apt DSL for OTC products. Further, Lexifi has developed MLFi, a
-closed contract description language that claims to support any combination of
+apt DSL for OTC products. Further, \href{http://www.lexifi.com/}{Lexifi} has developed 
+\href{http://www.lexifi.com/product/technology/contract-description-language}{MLFi},
+a closed contract description language that claims to support any combination of
 underlying assets. In addition, such contract languages are frequently used in
-banks (See my comment!). \ab{Can we substantiate this claim with a references, or
-is it reasonable enough?}
+banks such as the \textsc{Hiperfit} partners Lexifi, \href{www.simcorp.com}{SimCorp}
+and Nordea. Such contract languages define a convenient interface for contracts
+that are represented as lists of cashflows - an important point central in the
+design and development of \hql.\\
 
 As mentioned above, the Mathematica extension
 \texttt{DerivativesExpert}\cite{Mathematica:DerivativesExpert} by Sinan Gabel
