@@ -7,12 +7,16 @@ the necessary mathematical finance and conventions as we go along.
 \section{Language features}
 
 Functional languages lend themselves well to the domain of finance due
-to several reasons such as modularity\cite{hughes:matters-cj}, 
-laziness\cite{composingcontracts}. Moveover, the mathematical
- nature of finance makes functional languages suitable for valuation due its
-inherent mathematical foundation and purity.\\
+to several reasons such as modularity\cite{hughes:matters-cj} and 
+laziness\cite{composingcontracts}. Moreover, the mathematical nature
+of finance makes functional languages suitable for valuation due its
+inherent mathematical foundation and purity. Haskell's compositionality
+promotes code re-use and allows us to easily create new functions from
+existing ones. Haskell's standard library features a wide array of
+functions for list manipulation which are convenient as this data structure
+is used to represent cashflows.\\
 
-Haskell's advanced type system eliminate a whole class of bugs related to 
+Haskell's advanced type system eliminates a whole class of bugs related to 
 type errors and its 
 class system allows us to define type-safe interfaces for operations on 
 financial products who themselves can be represented by Haskell data types. 
@@ -24,10 +28,9 @@ called \texttt{presentValue} should return the present value regardless of the
 product type).\\
 
 Figure \ref{fig:overview} shows an overview of the entities we are dealing with
-and situaion we wish to model. Ultimately, each item in this figure must somehow
-be represented in Haskell using a class or type depending on the the item.
-
-We want to model a library that features financial products, mathematical models
+and situations we wish to model. Ultimately, each item in this figure must somehow
+be represented in Haskell using a class or type depending on the the item. We
+want to model a library that features financial products, mathematical models
 for valutation and finally what we call a pricing engine, which combines the 
 these contracts and mathematical models with the current state of the world
 in order to produce meaningful measurements of said contract.\\
@@ -43,13 +46,13 @@ in order to produce meaningful measurements of said contract.\\
 \end{figure}
 
 We shall begin with the modelling aspects and provide the reader with the
-matematical finance required. Thereafter we will present the contracts, and
+matematical background required. Thereafter we will present the contracts, and
 finally how such a pricing engine is modelled. 
 
 \section{Interest Rates}
 
 We begin our introduction to mathematical finance with a concept familiar to
-most, name interest rates. An interest rate is the the amount of return on
+most, namely interest rates, which specify the amount of return on
 investing an amount of money for a set amount of time. This can be formulated
 using a very simple equation, which we will demonstrate with a one year flat
 interest rate on a deposits account:
@@ -60,8 +63,8 @@ FV_T = N (1 + R_T)
 
 where $FV_T$ denotes the future value in $T=1$ periods, $N$ is the principal
 and $R_T$ is the rate over the period $T$\footnote{$T$ is also referred to as the
-\emph{tenor}.}. Extending this to multiple years we introduce a new 
-concept called compound interest, which is simply the formula above reapplied
+\emph{tenor}.}. Extending this to multiple years we introduce the 
+concept of compound interest, which is simply the formula above reapplied
 a number of times. The intuitive approach is
 that the compound interest is the return from reinvesting previously invested
 capital. Mathematically, this return can be formulated as an exponentially 
@@ -74,35 +77,36 @@ FV_{T_n} = N (1 + R_{T_n})^n
 where $FV$ is now dependent on the number of times it is compounded, and is 
 therefore also called periodic compounding.
 While this model is easy to understand, the world of finance demands much more 
-intricate details to correctly understand it. First, it assumes 
+intricate details to correctly interpret it. First, it assumes 
 discrete time periods, but we have not specified if this $n$ stands for days, 
-months, or years, or how what the tenor is. Further, it assumes that compounding
-occurs at after every period, which is not necessarily so. For instance, the
-equation \ref{eq:expcomp2} with $n=1$ and $m=2$ describes the return on a one-year
-investment with semiannual compounding:
+months, or years, or what the tenor is. Further, it assumes that compounding
+occurs at every period, which is not necessarily so. Equation \ref{eq:expcomp2}
+shows how the compounding frequency $m$ (number of times interest is compounded
+per year) affects exponential compounding. For instance if $n=1$ and $m=2$ the
+equation describes the return on a one-year investment with semiannual compounding.
 
 \begin{equation}\label{eq:expcomp2}
-FV_{T_n}^{n,m} = N (1 + \frac{R_T}{m})^{mn}
+FV_{T_n}^{n,m} = N (1 + \frac{R_{T_n}}{m})^{mn}
 \end{equation}
 
-does not  All of these intricacies are critical for correctness of \hql and must
+All of these intricacies are critical for correctness of \hql and must
 be accounted for in the implementation.\\
 
 Up until this point we have assumed that the compounding is performed at 
 discrete intervals. However, as \ref{eq:expcomp} is simply a formula, we may apply 
 methods  from calculus to achieve what is known as the continuously compounded interest 
 rate. It is defined as the resulting interest rate when we take the limit of 
-equation \ref{eq:expcomp} as $n$ goes to infinity:
+equation \ref{eq:expcomp} as $m$ goes to infinity:
 
 \begin{equation}
 \text{lim}_{n \rightarrow \infty}\; FV_T^n \; = \text{lim}_{n \rightarrow \infty}\; N (1 + R_T)^n
 = N e^{RT}
 \end{equation}
 
-where $R$ is the continuously compounded interest rate. This rate is much easier
-to work with in advanced fixed income modelling\cite{cmunk}, as we can disregard
-the details concerning periods and compounding intervals. Further, it yields
-sufficiently close numerical results.
+where $R$ is the continuously compounded interest rate\cite{HULL}. This rate
+is much easier to work with in advanced fixed income modelling\cite{cmunk}, 
+as we can disregard the details concerning periods and compounding intervals.
+Further, it yields sufficiently close numerical results.
 
 \begin{figure}[!htb]
 \centering
@@ -113,10 +117,14 @@ sufficiently close numerical results.
 
 Figure \ref{fig:comp02} shows the influence in rate as a result of the different
 kinds of compounding. Note that the return of the different compounding methods
-diverges after the first year. Furthermore, table \ref{tab:cmptable} gives an 
-overview of the relation between compounding functions and time steps.It should 
-be evident to the reader that the notion of linear continuously compounded interest
-rate is absurd, as we derive it from equation \ref{eq:expcomp}.
+differs after the first year. Furthermore, table \ref{tab:cmptable} gives an 
+overview of the relation between compounding functions and time steps.
+Periodic compounding is exactly the scenario we modelled in equations 
+\ref{eq:expcomp} and \ref{eq:expcomp2}, and the flat rate is described by equation
+\ref{eq:lincomp} ("flat" referring to the fact that return scale linearly with
+the time that the capital is invested). It should be evident to the reader
+that the notion of linear continuously compounded interest rate is absurd,
+as we derive it from equation \ref{eq:expcomp}.
 
 \begin{center}  
 \begin{longtable}{|r|c|c|}
@@ -142,18 +150,17 @@ newtype SimpleRate     = SimpleRate Rate deriving (Show)
 data ExponentialRate   = ExponentialRate Rate Frequency deriving (Show)
 \end{hscode}
 
-The simplicity of the types come at the of the assumption that all rates are
-annualized. This way, we only require a \texttt{Frequency} (an integer) to
-denoting number of times interest is compounded per year in the
-\texttt{ExponentialRate} type.\\
+\hql assumes annualized interest rates. This way, we only require a
+\texttt{Frequency} (an integer) to denoting number of times interest
+is compounded per year in the \texttt{ExponentialRate} type.
 Using the Haskell type system we can make sure that a continuously compounded
-rate is not mistakenly used in a function that expects a simple rate.
-Note that \texttt{newtype} does not exacerbate overhead.\\
+rate is not mistakenly used in a function that expects a simple rate, and
+the use of \texttt{newtype} does not exacerbate overhead.\\
 
 As we will see, it is often convenient to convert a rate such as the ones above
-into equivalent a simple rate. We have therefore chosen to model an
+into equivalent a continuously compounded rate. We have therefore chosen to model an
 \texttt{InterestRate} class that defines a number of methods, allowing for
-abstraction of the underlying rate:
+abstraction of the actual underlying rate:
 
 % TODO : Explain the Daycount convention + Calendar
 
@@ -171,18 +178,7 @@ class InterestRate r where
   rate           :: r -> Rate
 \end{hscode}
 
-A central tenet of our architecture is that we keep the backend
-as simple as possible and keep the interface detailed and 
-self-explanatory. This way we keep the mathematical formulas as transparent
-and clean as possible while the interface remains user-friendly. An example
-of this is our use of the \texttt{Offset} type, which indicates a point in 
-time relative to today, measured in years (e.g. an offset of $0.5$
-means six months from today). The interface, which remains to be seen, uses
-a somewhat convoluted Calendar module (due to several conventions in the 
-financial world), however the pricing backend we are currently describing 
-is completely oblivious to this fact.
-
-Further, as we mentioned above, advanced fixed income modelling and options 
+Advanced fixed income modelling and options 
 pricing often use the continuously compounded rates due to its mathematical 
 properties\cite{HULL}. The \texttt{continuousRate} function caters to this
 need, as it essentially solves the following equation for $R_C^n$:
@@ -194,19 +190,57 @@ e^{R_C^n} = (1+R_p)^n
 where is $R_p$ the exponentially (periodically) compounded rate.\\
 
 The \texttt{discountFactor} function introduces concept that we
-explain in the following section.
+explain in the following section. We refer to the \hql documentation\cite{hqldoc}
+for an in-depth treatment of the mathematical finance pertaining to interest
+rates.
 
-We refer to the \hql documentation\cite{hqldoc} for an in-depth treatment of the
-mathematical finance pertaining to interest rates.
+A central tenet of our architecture is that we keep the backend
+as simple as possible and keep the interface detailed and 
+self-explanatory. This way we keep the mathematical formulas as transparent
+and clean as possible while the interface remains user-friendly. An example
+of this is our use of the \texttt{Offset} type, which indicates a point in 
+time relative to today, measured in years (e.g. an offset of $0.5$
+means six months from today). The interface, which remains to be seen, uses
+a sophisticated \texttt{Calendar} module, however the pricing backend we
+are currently describing is completely oblivious to this fact.\\
+
+Our calendar module features a wide range functions to accommodate date
+generation that cater to the numerous conventions in finance. As payments
+can only be made on business days, the \emph{roll convention} of a product
+determines how payments should be shifted in time in case of a local
+holiday such as the Danish \emph{Store Bededag} prevents a transaction from
+being made. We present our date-interpolation function as an example:
+
+\begin{hscode}
+data RollConvention = Following -- Move forward in time 
+                    | Preceding -- Move backward in time
+                    | ModifiedFollowing -- Described below
+
+interpolateDates :: Date           -- Start date
+                 -> RollConvention -- The 
+                 -> Settlements    -- No. settlements per year
+                 -> Date           -- End date
+                 -> [Date]         -- Resulting interpolated dates
+\end{hscode}
+
+The roll conventions \emph{Following} and \emph{Preceding} are intuitive, either
+force a move forward or backward if the date in question is illegal. 
+\emph{Modified following} is a mixture of the two - always move forward in time
+unlesss the new date is in the following month, in which case \emph{Preceding}
+is applied.
+\ab{Reason for MF!}
+
+Finally, we use the \texttt{Data.Time} library to represent our \texttt{Date} type
+as it has excellent support for date manipulation.
 
 \section{Discounting}\label{sec:discounting}
 
-We first present the basic theory of cashflow discounting, and motivate with
-a small example. Given an option to invest an initial amount and receive 
-\$$100$ in a year from now, how would you decide whether or not to invest? In
-other words, what is the price of such an investment? If the investment bears
-an interest rate of 5\%, then we may use equation \ref{eq:lincomp} to solve
-for $N$, the initial investment i.e. the price:
+Interest rates modelled by these types are essential in computing the present
+value of a bond. Consider the following example: given an option to invest an
+initial amount and receive \$$100$ in a year from now, how would you decide 
+whether or not to invest? In other words, what is the price of such an 
+investment? If the investment bears an interest rate of 5\%, then we may use
+equation \ref{eq:lincomp} to solve for $N$, the initial investment i.e. the price:
 
 \begin{equation}
 100 = N (1 + 0.05) \Leftrightarrow N = \frac{100}{1+0.05}
@@ -226,7 +260,7 @@ year, the decision becomes more complex.
 Imagine a second party offering \$$90$ in one year with an additional payment of
 \$$10$ after six months. Summing the two cashflows could make us believe that the
 two options are equal. However, due to the time value of money, the latter option
-is favourable. This is because we may reinvest the \$$10$ over the remaining six
+is favourable, because we may reinvest the \$$10$ over the remaining six
 month tenor of the investment! We present the scenario pictorially in figure
 \ref{fig:tvom} below.
 
@@ -290,28 +324,24 @@ month tenor of the investment! We present the scenario pictorially in figure
 As investors want to maximize profits, it is quite intuitive to think that
 the decision to invest directly depends on what alternatives are available.
 Assuming resources are limited, it may quickly become difficult to asses which
-option is opportune if the market offers multiple choices. As the discount factor
-is just the inverse of the interest rate, \texttt{discountFactor} is part of the
-interface for interest rates.\\
-
+option is opportune if the market offers multiple choices. As we saw above,
+the discount factor is implicit given the rate, hence the reason for
+\texttt{discountFactor} is part of the interface for interest rates.\\
 Again we refer the reader to the documentation\cite{hqldoc} for examples of
 how this is done in \hql.\\
 
 Since we must consider all options to maximize our profits, we must somehow have an
 overview of the interest rates currently offered in the market. This leads us onto the
-next key element in pricing theory, namely the term structure of interest rates.
+next key element in pricing, namely the term structure of interest rates.
 
-\section{Term Structure}
+\section{Term Structure}\label{sec:ts}
 
 A term structure can be viewed as a function f that given a tenor returns 
-an interest rate. Since these are zero rates, term structures are valuable 
-tools in finance as we may use them to discount any cashflow regardless how it
-was generated.
-
-\ab{What do}
-%The converse is not true, we cannot use the rate over the tenor
-%of a serial to discount a future income stream, unless that follows the exact
-%same cash flow pattern.\\
+an interest rate. This rate reflects the expected return on an investment
+over that period, meaning we may directly apply it to discount a cashflow
+falling on the particular date implied by the tenor. It is also referred
+to as a zero rate, as it is only usable to discount a independent cashflow
+where there are no other intermittent payments over the tenor.
 
 \begin{figure}[h!]
 \begin{center}
@@ -632,7 +662,12 @@ class Instrument b => Bond b where
 
 The \texttt{cashflow} function generates a list of payments exactly as shown
 in figure \ref{fig:serialcf} while \texttt{coupons} generates only the coupon
-payments.
+payments. We define a function \texttt{dirty}, which is used by the \texttt{pv}
+function to return the price of a bond at a specific bond. "Dirty" means that
+the price does not take into account the time value of money if the bond is
+sold between two coupon payments. A "clean" price also exists that accounts
+for the accrued interest between two payments.\\
+
 A serial is an example of an \emph{amortized} bond, meaning that the writer
 of a serial (the person who initially lended the money) receives repayments over
 the lifetime of a bond. As these loan-based bonds come in multiple flavours
@@ -669,7 +704,7 @@ data FixedAmortizedBond where
                aroll :: RollConvention } -> FixedAmortizedBond
 \end{hscode}
 
-where the fields are explained in table \ref{tab:fields}.
+where the fields are explained in table \ref{tab:fields}.\\
 
 \begin{center}  
 \begin{longtable}{l|l|l}
@@ -688,7 +723,7 @@ Field & Meaning & Usage\\\hline
 Note that although the \texttt{Annuity} loan has the same fields as our serial,
 we need a separate constructor for it as the cashflow generation is completely
 different for this bond type\cite{hqldoc}. In addition to the zero and amortized
-bonds, \hql also feature a consol and bullet bond. We refer to appendix?
+bonds, \hql also features various other bond types\cite{hqldoc}.
 
 %%% Haskell %%%
 A central tenet of our architecture is that we keep the backend
@@ -734,49 +769,12 @@ In fixed income we saw that the term structure of interest rates qualified,
 but this is not the case for options.
 
 Instead, we may want to use a Black-Scholes model for European
-options\cite{cmunk} or a binomial model for American\footnote{The distinction
+options or a binomial model for American\footnote{The distinction
 between American and European has nothing to do with geography. European
 options may only be exercised at maturity, while American ones can be
-exercised at any time.} options.
+exercised at any time.} options\cite{HULL}.
 
 While it is possible to price European-style options using a closed-form 
-solution, we must apply simulation methods to price the American counterpart.\\
-The associated type, \texttt{PricingEngine} is therefore liberal enough to
-allow us to specify something like:
-
-\begin{hscode}
--- European options
-newtype BlackScholes = (EuropeanOption -> Cash)
-instance Instrument EuropeanOption where
-  type PricingEngine = BlackScholes
-
--- American options
-instance Instrument EuropeanOption where
-  type PricingEngine = BinomialModel
-\end{hscode}
-\ab{Still working on this}
-
-%First of all, a natural next step in the development of HQL is the 
-%implementation of derivatives which is itself a product relying on another- the 
-%\emph{underlying} - hence the the name. An example of this is 
-%a forward-rate agreement, the simplest being an agreement where two parties 
-%agree on a future trade of a commodity. It should be obvious that the price of 
-%the underlying directly affects the value of having entered such an agreement.\\
-%
-%However, with the addition of floating rate bonds, we may model fixed income 
-%derivatives such as swaps. A swap is contract in which two counterparties agree 
-%to exchange two cashflows.
-
-%Fixed
-%Floating
-%Fixed
-%Inter-currency
-%Vanilla
-%Floating
-%Vanilla
-
-%There are two obvious ways in which we can extend HQL with interest rate 
-%derivatives support. For instance, swaps can be modelled by combining a fixed 
-%and a floating leg, the latter still not yet being supported. On the other 
-%hand, it could be built as a list of forward-rate agreements (make sure this is 
-%explained above, or refer to Appendix) between the two parties in question.
+solution, we must apply simulation methods to price the American counterpart.
+The computations required should be reflected by the declaration of
+\texttt{PricingEngine}.
