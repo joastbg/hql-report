@@ -65,15 +65,10 @@ In terms of free software, the amount of quantitative finance libraries is
 limited.
 The most prominent is Quantlib, an open-source C++ library\cite{Ame2003}
 supporting a wide array of financial products ranging from bonds to more 
-exotic derivatives. It models financial products in a class hierarchy.
-We shall attempt to model the relations between the concepts from Quantlib
-in Haskell.
-
-% Massive use of templates
-Quantlib makes heavy use of C++ templates and multiple inheritance to model
-financial products and their mutual dependencies\cite{implql}.
-
-% Multiple inheritance
+exotic derivatives. Many products share the same characteristics, and
+Quantlib takes advantage of this by making heavy use of C++'s templates 
+and multiple  inheritance to model the products at a high level of 
+abstraction\cite{implql}
 In this project we wish to model the same products as Quantlib using Haskell's
 language constructs.\\
 
@@ -87,7 +82,8 @@ allowing users to define virtually any financial contract, making it a very
 apt DSL-like library for OTC products. Further, Lexifi has developed MLFi, a
 closed contract description language that claims to support any combination of
 underlying assets. In addition, such contract languages are frequently used in
-banks. See comment! \ab{Can we substantiate this with a references..?}
+banks (See my comment!). \ab{Can we substantiate this claim with a references, or
+is it reasonable enough?}
 
 As mentioned above, the Mathematica extension
 \texttt{DerivativesExpert}\cite{Mathematica:DerivativesExpert} by Sinan Gabel
