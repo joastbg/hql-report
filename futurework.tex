@@ -16,31 +16,28 @@ external to the models we use.\\
 Therefore it is desirable to wrap our computations in a monad that allows us
 to structure our program in a pure manner.
 
-\begin{hscode}
-Things
-\end{hscode}
+\ab{Will elaborate.}
 
 \section{Floating rates}
 
 First of all we do not have support for the ubiquitous floating-rate bonds, 
-where we must rely on Monte Carlo simulations for valuation. Haskell's 
+where we must rely on implied interest rates as discussed in section \ref{sec:ts}
+or Monte Carlo simulations for valuation. Haskell's 
 \texttt{State} monad provides an excellent interface for a \texttt{Simulation}
 type for stochastic processes, which are typically used in pricing floating
-rate bonds that use LIBOR. We present a small proof of concept of a brownian
-motion process using a\href{http://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform}{Box-Muller} transform:
-
-\ab{Find something more suitable than Wikipedia...}
+rate bonds that use the \emph{London Interbank Offered Rate} (LIBOR). Such
+processes are easily created using a \texttt{State} monad, as in the following
+example of brownian motion process  using a  Box-Muller transform:
 
 \begin{hscode}
 type Simulation = State StdGen -- abstract away random number generator
 
+-- | Generates a random number in the [0,1] range
 randomUnit :: Simulation Double
-randomUnit = do
-               gen <- get
-               let (v,gen') = randomR (0::Double, 1::Double) gen
-               put gen'
-               return v
+randomUnit = state $ randomR (0,1)
 
+-- | Converts a uniform distributin sample into a 
+-- normal gaussian distributed sample.
 boxMuller :: Simulation Double
 boxMuller = do
   u0 <- randomUnit
@@ -52,53 +49,87 @@ sbm :: Simulation [Double]
 sbm = sequence $ repeat boxMuller
 \end{hscode}
 
+Since the rate changes at regular intervals, it is very convenient for us
+model floating rate bonds using a monad. 
+
 \section{Fixed Income Derivatives}
 
-A natural next step would then be to implement interest rate derivatives such 
-as swaps. There are two obvious ways in which we can extend \hql with interest rate 
-derivatives support. For instance, swaps can be modelled by combining a fixed 
-and a floating leg. On the other hand, it also could be constructed as a list of 
-forward-rate agreements between the two parties in question.\\
+As soon as floating rate bonds are implemented it will be possible to model
+basic interest rate derivatives such as swaps. A so-called vanilla swap is an
+OTC product between two parties, where each agree to pay the other's debt. While
+one party pays a fixed interest rate, the other pays at a floating rate. The
+motivation behind entering such an agreement is typically that the party paying
+a floating rate is averse to the risk of rising interest rates, or market
+speculation by the counterpart.\\
 
-\ab{Make sure forward-rate agreements are explained above!}
+Swaps can be modelled by combining a fixed and a floating rate bond in a data
+type and defining a \texttt{IRS} (interest rate derivative) class as in figure
+\ref{fig:classhier} for appropriate methods.
+Using our existing types:
+
+\begin{hscode}
+data IRS where
+    IRS :: { leg1 :: Bond b => b,
+             leg2 :: Bond b => b } -> IRS
+\end{hscode}
+
+This definition subsumes the following swap types:
+
+\begin{center}  
+\begin{longtable}{r|c|c|}
+Swap Type & Fixed          & Floating \\\hline  
+Fixed     & Inter-currency & Vanilla\\\hline
+Floating  & Vanilla        & Basis\\\hline
+\caption{Rates and basic swap types.}
+\end{longtable}
+\label{tab:swaps}
+\end{center}
+
+Basis swap use different reference rates, e.g. one uses LIBOR while the other
+uses the Euro Interbank Offered Rate (EURIBOR)\cite{HULL}.
 
 \section{Mortgage-backed Obligations}
 
-Support for mortgage-backed bonds is also missing in our library. We provide an 
-\texttt{MBO} class so that passthroughs or subprimes can share a common interface.
-However, the data structures and functionality are missing and should be 
-implemented. \hql should also be extended so as to allow prepayment estimates to
-be computed.
+Support for mortgage-backed bonds is also missing in \hql. These also fall
+into the fixed income category but are different in the sense that the
+invidual who took the loan may pay out the remaining outstanding principal
+at any time (a \emph{prepayment}). This could be due to selling a house 
+and paying back the loan in full. 
+We provide an \texttt{MBO} class so that passthroughs or subprimes can share a 
+common interface. However, the data structures and functionality are missing 
+and should be  implemented. \hql should also be extended so as to allow 
+prepayment estimates to be computed.
 
 \section{OTC products}
 
-It would be desirable to implement an embedded domain-specific 
-language (EDSL) for construction of OTC products. As OTC products are
-subject to counterparty risk, this would be another topic 
-to investigate.
+It would be desirable to implement an embedded domain-specific language (EDSL)
+for construction of OTC products. Peyton Jones and Eber present such a contract
+language in \cite{composingcontracts}. As OTC products are subject to
+counterparty risk, this would be another topic to investigate. Note that government
+issued bonds are also affected by counterpart risk since a state may declare
+a sovereign default.
 
 \section{Bootstrapping}
 
 So far we have seen how to generate cashflows and how to obtain their 
-discounted values. However, this is preconditioned on the fact that we aldready 
+discounted values. However, this is preconditioned on the fact that we already 
 have a term structure available. This begs the question, how do we construct 
 such a term structure if all we have is a set of yield curves who's yields 
 are inherently dependent on the given instrument we wish to price?
-Bootstrapping is method of generating such a term structure from the yield 
-curves, making it possible to discount any cash flow according to the 
-prevailing interest rates.
-\cite{HULL} provides excellent description of how bootstrapping is performed.
 
-Further, Munk\cite{cmunk} presents several methods of determining a discount
-function by means of cubic splines or term structures by the Nelson-Siegel method. 
+Bootstrapping is method of generating such a term structure from yield 
+curves, making it possible to discount any cash flow according to the 
+prevailing interest rates. 
+This would allow users to import the interest rates that are currently being 
+offered in the market from external sources large financial institutions like
+as \href{www.bloomberg.com}{Bloomberg} or \href{www.reuters.com}{Reuters}.
+This data could then be used to build a \texttt{TermStructure} type 
+that may be used for bond valuation. Note that \hql's discrete and interpolated 
+term structures would be easily implemented, but the analytical term structure
+would require application of the method such as cubic splines or term structures
+by the Nelson-Siegel method. 
 An interesting project could set out to investigate the feasibility of adding such 
 functionality to \hql.
-
-Another interesting extension is to implement a way of generating yield curves 
-from portfolios using bootstrapping or interpolation\cite{cmunk}.
-This would allow users to import data from external sources large financial
-institutions such as \href{www.bloomberg.com}{Bloomberg} or
-\href{www.reuters.com}{Reuters}, and build curves in HQL for bond valuation.\\
 
 \section{Dates, dates, dates}
 
@@ -106,9 +137,8 @@ Our calendar module needs to be revised as we currently interpolate
 payment dates using the settlement date, maturity and the desired amount of 
 settlements per year. However, this is too lax a method, since most standard 
 products have set payment patterns. A way of extending this could be to make
-the interface stricter so that users must specify a standard payment 
-structure or define their bond as an OTC product.
-\ab{Can we find a few examples? (Sinan?)}
+the interface stricter so that users must specify a standard well-defined
+payment structure or define their bond as an OTC product.
 
 Moreover, \hql currently assumes that all weekdays are valid payments dates. 
 This doesn't cater to local holidays (e.g. \emph{Store Bededag} in Denmark). A 
