@@ -835,7 +835,25 @@ pv = sum $ zipWith (*) cashflowList discountFactors
 \end{hscode}
 
 For ease of exposition we have altered the function names, but these are the 
-the exact computations carried out by \hql.
+the exact computations carried out by \hql.\
+
+Finally, we have found graphical representations of cashflow such as figure
+\ref{fig:serialcf} and \ref{fig:annuitycf} incredibly useful tools during
+the course of the project. As a result, \hql features a \texttt{Visualize}
+module that allows users to produce images of their cashflows such as the 
+one shown in figure \ref{fig:awesomeness}.
+
+\begin{figure}[h!]
+\begin{center}
+%\begin{minipage}{\linewidth}
+%\makebox[\linewidth]{\includegraphics[keepaspectratio=true,scale=0.6]{images/Overview.pdf}}
+\includegraphics[keepaspectratio=true,scale=0.4]{images/GraphicsModuleAwesome.png}
+\caption{Displaying the use of \hql's \texttt{Visualize} module.}
+\label{fig:awesomeness}
+%\end{minipage}
+\end{center}
+\end{figure}
+
 
 \section{Options, Futures and other Derivatives}
 
