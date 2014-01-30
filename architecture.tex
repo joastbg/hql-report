@@ -337,11 +337,12 @@ next key element in pricing, namely the term structure of interest rates.
 \section{Term Structure}\label{sec:ts}
 
 A term structure can be viewed as a function f that given a tenor returns 
-an interest rate. This rate reflects the expected return on an investment
-over that period, meaning we may directly apply it to discount a cashflow
-falling on the particular date implied by the tenor. It is also referred
-to as a zero rate, as it is only usable to discount a independent cashflow
-where there are no other intermittent payments over the tenor.
+a corresponding annual interest rate. This rate reflects the expected return 
+on an investment over that period, meaning we may directly apply it to 
+discount a cashflow falling on the particular date implied by the tenor.
+It is also referred to as a zero rate, as it is only usable to discount 
+a independent cashflow where there are no other intermittent payments over
+the tenor.
 
 \begin{figure}[h!]
 \begin{center}
@@ -407,15 +408,14 @@ data TermStructure = DiscreteTermStructure (Map Maturity Rate)
                    | LinearInterpolatedTermStructure (Map Maturity Rate)
 \end{hscode}
 
-\ab{Do we need to import \texttt{Data.Map}?}
-
+where a \texttt{Map} is simply a dictionary data structure i.e. a mapping.
 To better understand our data types we have shown them in figure \ref{fig:tstypes},
 where we see that the \texttt{dfAt} is only defined at certain points in time for
 a discrete term structure. Our \texttt{LinearInterpolatedTermStructure} is similar,
 except it uses linear interpolation to estimate a term structure.
 Finally, The analytical term structure is simply a function with domain $\mathcal{R}^+_0$
 that maps an offset from valuation date to a zero interest rate over the given
-period. This is necessary to represent a Nelson-Siegel generated function\cite{cmunk}.
+period.
 
 In addition, we have defined the following functions to look up interest rates
 or compute discount factors:
@@ -431,8 +431,7 @@ fwdRate :: TermStructure -> Maturity -> Maturity -> Maybe Factor
 \end{hscode}
 
 For instance, \texttt{yieldAt} function applied to the term structure in
-figure \ref{fig:anc} with an offset of 3.5 years would produce $2.4\%$. We have
-defined the following data types that are instances of the class above:
+figure \ref{fig:anc} with an offset of 3.5 years would produce $2.4\%$.
 
 \begin{figure}[h!]
 \begin{center}
@@ -498,21 +497,20 @@ defined the following data types that are instances of the class above:
 
 The reader should note that an interest rate with offset zero (that is, today) is
 always zero, since nobody would be willing to lend you money for a single day.
-Due to the inverse relation of interest rates and discount factors, the discount factor
-today is always 1.
+This means that the discount factor today is always 1.
 
 Moreover, the forward rate function, \texttt{fwdRate}, is used to obtain the 
 implied future zero rates. There is no conceptual leap required to understand 
 these, as they are simply interest rates in the future, hence the type 
 signature requiring two offsets.\\
-Notwithstanding, their usefulness is may not be evident. 
+Notwithstanding, their usefulness may not be evident. 
 Imagine three points in time, $d_0$ - today - and two
 offsets in the future $d_1$ and $d_2$. We are then tasked with finding out
 what the interest rate between $d_1$ and $d_2$, $R_{12}$ would be. Despite not 
 knowing whether the interest rate will increase or decrease we may specify 
-this by introducing \emph{arbitrage}. In brief, no arbitrage is the
-assumption it is not possible to buy and sell the same good and turn a
-profit i.e. "free money". Given annual rates we can now claim the following:
+this by assuming no arbitrage. In brief, arbitrage is taking advantage of
+different prices of the same good in order to turn a profit i.e. "free money".
+Given fixed annual rates by the term structure we can now claim the following:
 
 \begin{equation}
 \underbrace{(1+R_{02})^2}_{observable} = \underbrace{(1+R_{01})}_{observable}(1 + R_{12})
@@ -523,11 +521,11 @@ can now solve for $R_{12}$ to obtain the forward rate. Forward rates therefore
 allow us to make statements about future interest rates as a result of the
 prevailing interest rates.
 
-% TODO more
+\ab{More?}
 
 \section{Instruments}\label{sec:instruments}
 
-Now that we have cemented the basic theory of interest rates, discounting
+Now that we have established the basic theory of interest rates, discounting
 and term structures we turn to their application in financial instruments.
 
 We have defined an \texttt{Instrument} class to represent the high-level
