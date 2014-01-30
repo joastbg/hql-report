@@ -11,36 +11,66 @@ of finance and implemented the scaffolding required for valuation,
 namely a calendar module, day-count conventions, currency support, interest 
 rates and term structures. Moreover, we have also implemented a fixed income 
 module which we have used as an example throughout this report.\\
-
 Finally we have created documentation for the modules related to fixed 
 income\cite{hqldoc}.
 
 \section{Language limitations}
 
 First we point out the limitations in terms of the choice of language.
-Haskell's type system is a double-edged sword which becomes explitic as soon 
-as we need to do introduce \emph{impure} code - namely the \texttt{IO} monad.
+Haskell's type system becomes poses a challenge when we to do introduce
+\emph{impure} code - namely the \texttt{IO} monad.
 
 For instance, to model inter-currency swaps we need to retrieve the exchange 
 rate at the exact moment when the transaction is done. Retrieving this 
 information is impure, as it is an external to the Haskell runtime. In Java, a 
-programmer would wrap such a query in a try-catch and not think twice about it, 
+programmer would wrap such a query in a try-catch and not think twice about it,
 but we do not have this luxury in Haskell due to the stickiness of the 
 \texttt{IO} monad. One option is to use \texttt{unsafePerformIO} - but this is 
-infeasible as it would introduce impurity into our code.
-Section \ Instead we can wrap our models in a monad that will perform the necessary 
+infeasible as it hides impurity into our code.
+Instead we can wrap our models in a monad that will perform the necessary 
 computations when given an environment. This solution may also be used to 
-retrieve market data and bootstrap a termstructure internally.
+retrieve market data and bootstrap a termstructure internally.\\
 
-Also, we currently use Haskell's \texttt{Double} datatype to 
-Ideally HQL should be extended to use the \href{https://hackage.haskell.org/package/data-binary-ieee754}{\texttt{IEEE754}} package for floating 
-points, as it correctly addresses the problems regard comparisons of 
-doubles described in \cite{blogpost}.
+Moreover, \hql should ideally be extended to use a suitable library for
+IEEE floating point arithmetic as there are a number of issues regarding
+comparisons of doubles described in \cite{blogpost}.\\
+\ab{Verify!}
 
-\section{Limitations}
+Finally, we have encountered a minor limitation in Haskell's class system. This 
+becomes apparent when creating instances of various instruments. We return to 
+our serial example and show how it is made an instance of \texttt{Instrument}:
 
-We now point out the limitations that the Haskell language and our architecture 
-have imposed.
+\begin{hscode}
+instance Instrument FixedAmortizedBond where
+  type PricingEngine = TermStructure
+  ...
+\end{hscode}
+
+Here \texttt{TermStructure} is the Haskell data type described in section 
+\ref{sec:ts}. We would rather be able to do the following:
+ 
+\begin{hscode}
+instance Instrument FixedAmortizedBond where
+  type TermStructure t => PricingEngine = t
+  ...
+\end{hscode}
+
+The distinction lies in the fact that in the second example, the term structure
+is a class, meaning we may use the interface it defines. It would make for a much
+cleaner solution.
+
+For instance, if we were to add a new term structure we could simply make it
+an instance of the \texttt{TermStructure} class. Instead, we now have to add it as a 
+constructor in th \texttt{TermStructure} data type and extend or create all of
+the functionality around it.\\
+Regarding type safety, a class is also superior because we could potentially
+create a hierarchy of pricing engines and use constraints our instances as above.
+It would be a more organized design of the pricing engine architecture.
+
+%\section{Limitations}
+%
+%We now point out the limitations that the Haskell language and our architecture 
+%have imposed.
 
 %Moreover, Haskell’s type system has not provided us with an elegant solution 
 %for representation of currencies.
