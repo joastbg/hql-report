@@ -851,12 +851,16 @@ must be an instance. This means that the challenge lies the the fact
 that we must define an appropriate \texttt{PricingEngine} type for each
 class of products.\\
 
-A \emph{call option} is a contract that gives the holder the right to purchase
-(or \emph{exercise} a good or service (this is called the \emph{underlying}) 
-at a specific price (the \emph{strike}). What pricing engine is appropriate 
-for such a contract; does it depend on the underlying?
-In fixed income we saw that the term structure of interest rates qualified,
-but this is not the case for options.
+\hql does not currently support options, but they serve as a good example
+of how pricing engines vary. 
+An option is a contract that gives the holder the right to purchase or sell
+(or the more general term \emph{exercise}) a good or service (called the
+\emph{underlying}) at a specific price (the \emph{strike}). So-called European
+options can only be exercised at maturity, while American options may be 
+exercised at any point during the lifetime of the option.
+What pricing engine is appropriate for such contracts; does it depend on the
+underlying? In fixed income we saw that the term structure of interest rates
+qualified, but this is not the case for options.
 
 Instead, we may want to use a Black-Scholes model for European
 options or a binomial model for American\footnote{The distinction
@@ -868,9 +872,3 @@ While it is possible to price European-style options using a closed-form
 solution, we must apply simulation methods to price the American counterpart.
 The computations required should be reflected by the declaration of
 \texttt{PricingEngine}.
-
-
-
-
-
-
