@@ -134,8 +134,8 @@ as we derive it from equation \ref{eq:expcomp}.
 Discrete   & Flat   & Periodic\\\hline
 Continuous & \textcolor{red}{\xmark} & Continouous\\\hline
 \caption{Compounding and time steps.}
-\end{longtable}
 \label{tab:cmptable}
+\end{longtable}
 \end{center}
 
 We see that the method of compounding has very distinct impact on the returns.
@@ -162,7 +162,7 @@ into equivalent a continuously compounded rate. We have therefore chosen to mode
 \texttt{InterestRate} class that defines a number of methods, allowing for
 abstraction of the actual underlying rate:
 
-% TODO : Explain the Daycount convention + Calendar
+\ab{TODO: Explain the Daycount convention}
 
 \begin{hscode}
 type Offset = Double -- offset from today in years
@@ -228,10 +228,38 @@ force a move forward or backward if the date in question is illegal.
 \emph{Modified following} is a mixture of the two - always move forward in time
 unlesss the new date is in the following month, in which case \emph{Preceding}
 is applied.
+We use the \texttt{Data.Time} library to represent our \texttt{Date} type
+as it has excellent support for date manipulation.\\
+
 \ab{Reason for MF!}
 
-Finally, we use the \texttt{Data.Time} library to represent our \texttt{Date} type
-as it has excellent support for date manipulation.
+Further, the daycount conventions (or \emph{basis}) is used when computing the
+interest earned between two dates. The following equation shows how this is
+computed:
+
+\begin{equation}\label{eq:dcc}
+\frac{\text{Number of days between two dates}}{\text{Days in a year}} \cdot \text{Interest earned between the two dates}
+\end{equation}
+
+In finance, the number of days in a given month or year is specified by the
+basis, not the calendar. There are various ways of computing the both the numerator
+and the denominator we see in equation \ref{eq:dcc}, the reason being that some
+bases simplifies computations. We now present four basic conventions that \hql
+has support for:
+
+\begin{hscode}
+-- | Frequently used conventions 
+data Basis = ACTACT -- Actual no. days / Actual days in year
+           | ACT360 -- Actual no. days / 360, always 360 days in a year
+           | ACT365F -- Actual no. days / 365
+           | Thirty360 -- Described below
+
+class DayCount d where
+  modifier :: d -> Date -> Date -> Double
+\end{hscode}
+
+\texttt{Thirty360} assumes that all months have 30 days, and that each year has
+360 days in total. This is more convenient as $\frac{360}{30}$ equals exactly 12.\\
 
 \section{Discounting}\label{sec:discounting}
 
@@ -426,6 +454,8 @@ type Factor = Double
 yieldAt :: TermStructure -> Maturity -> Maybe Rate
 -- | Returns the discount factor at an offset
 dfAt :: TermStructure -> Maturity -> Maybe Rate -- discount factor
+-- | Returns the discount factors given a list of offsets
+dfsAt :: TermStructure -> [Maturity] -> [Maybe Rate]
 -- | Returns the forward rate given two offsets
 fwdRate :: TermStructure -> Maturity -> Maturity -> Maybe Factor
 \end{hscode}
@@ -561,7 +591,7 @@ products.\\
 
 In the coming sections we shall delve into the specific instruments and
 describe their implementations. We refer the reader to figure \ref{fig:classhier}
-for and overview of the classes we have defined. The arrows denote type class
+for an overview of the classes we have defined. The arrows denote type class
 constraints e.g. a \texttt{Bond} must be an instance of \texttt{Instrument}.
 
 \section{Fixed Income}\label{sec:fi}
@@ -663,11 +693,13 @@ in figure \ref{fig:serialcf} while \texttt{coupons} generates only the coupon
 payments. We define a function \texttt{dirty}, which is used by the \texttt{pv}
 function to return the price of a bond at a specific bond. "Dirty" means that
 the price does not take into account the time value of money if the bond is
-sold between two coupon payments. A "clean" price also exists that accounts
-for the accrued interest between two payments.\\
+sold between two coupon payments. That means that if a bond is sold a day before
+a coupon payment is due it is not reflected in the price. A "clean" price also
+exists that accounts for the accrued interest between two payments, however
+\hql does not support this at the time of writing.\\
 
-A serial is an example of an \emph{amortized} bond, meaning that the writer
-of a serial (the person who initially lended the money) receives repayments over
+A serial is an example of an \emph{amortized} bond, meaning that the entity
+who initially lended the money receives repayments over
 the lifetime of a bond. As these loan-based bonds come in multiple flavours
 we have therefore created an \texttt{Amortized} class:
 
@@ -702,7 +734,7 @@ data FixedAmortizedBond where
                aroll :: RollConvention } -> FixedAmortizedBond
 \end{hscode}
 
-where the fields are explained in table \ref{tab:fields}.\\
+where the fields are explained in table \ref{tab:fieldz}.\\
 
 \begin{center}  
 \begin{longtable}{l|l|l}
@@ -711,23 +743,67 @@ Field & Meaning & Usage\\\hline
 \texttt{amatu} & Maturity date & End date for interpolation\\
 \texttt{aface} & Face Value & Used to compute repayment and coupons\\
 \texttt{astms} & Settlements per Year & Used to generate payment dates\\
-\texttt{adcc} & Daycount convention & Used in discounting\\
+\texttt{adcc} & Daycount convention & Used in discounting for computing an offset\\
 \texttt{aroll} & Roll convention & Resolves illegal payment dates (e.g. weekends)\\
 \caption{\texttt{FixedAmortizedBond} fields}
+\label{tab:fieldz}
 \end{longtable}
-\label{tab:fields}
 \end{center}
 
 Note that although the \texttt{Annuity} loan has the same fields as our serial,
 we need a separate constructor for it as the cashflow generation is completely
-different for this bond type\cite{hqldoc}. In addition to the zero and amortized
-bonds, \hql also features various other bond types\cite{hqldoc}.
+different for this bond type, as we see in figure \ref{fig:annuitycf}.
 
-%%% Haskell %%%
-A central tenet of our architecture is that we keep the backend
-as simple as possible and keep the interface detailed and 
-self-explanatory. This way we keep the mathematical formulas as transparent
-and clean as possible while the interface remains user-friendly.\\
+\begin{figure}[h!]
+\begin{center}
+\begin{tikzpicture}[-,shorten >=1pt,auto,node distance=1.5cm,thick,minimum size=0.8cm,main node/.style={circle,draw=red,very thick}]
+\tikzstyle{selected edge} = [draw,line width=6pt,-,blue!30]
+
+\coordinate (belowstart) at (0,-1);
+\coordinate (start) at (0,0);
+\coordinate (stop) at (10.2,0);
+\coordinate (abovestop) at (10.2,2);
+\draw (start) -- (stop);
+\draw (start) -- (belowstart);
+\draw (stop) -- (abovestop);
+
+\node at (0, -1.5) () {$t=0$};
+
+\filldraw[draw=black, fill=blue] (2,0) rectangle node {} +(0.2,1.5);
+\filldraw[draw=black, fill=lightgray]  (2,1.5) rectangle node {} +(0.2,0.25);
+\node at (2, 2.5) () {$t=2$};
+
+\filldraw[draw=black, fill=blue] (4,0) rectangle node {} +(0.2,1.3);
+\filldraw[draw=black, fill=lightgray]  (4,1.3) rectangle node {} +(0.2,0.45);
+\node at (4, 2.5) () {$t=4$};
+
+\filldraw[draw=black, fill=blue] (6,0) rectangle node {} +(0.2,1.1);
+\filldraw[draw=black, fill=lightgray]  (6,1.1) rectangle node {} +(0.2,0.65);
+\node at (6, 2.5) () {$t=6$};
+
+\filldraw[draw=black, fill=blue] (8,0) rectangle node {} +(0.2,1);
+\filldraw[draw=black, fill=lightgray]  (8,1) rectangle node {} +(0.2,0.75);
+\node at (8, 2.5) () {$t=8$};
+
+\filldraw[draw=black, fill=blue] (10,0) rectangle node {} +(0.2,0.85);
+\filldraw[draw=black, fill=lightgray]  (10,0.85) rectangle node {} +(0.2,0.9);
+\node at (10, 2.5) () {$t=10$};
+
+% Legend
+\filldraw[draw=black, fill=blue] (7,-1) rectangle node {} +(0.2,0.2);
+\node at (8.3, -0.92) () {repayment};
+
+\filldraw[draw=black, fill=lightgray] (7,-1.5) rectangle node {} +(0.2,0.2);
+\node at (8, -1.44) () {coupon};
+
+\end{tikzpicture}
+\caption{Cashflow of an annuity.}
+\label{fig:annuitycf}
+\end{center}
+\end{figure}
+
+In addition to the zero and amortized bonds, \hql also features various other
+bond types\cite{hqldoc}.\\
 
 The backend for pricing bonds exploits the fact that all instances must define
 the \texttt{cashflow} function. As we saw in section \ref{sec:discounting},
@@ -742,8 +818,24 @@ where $cf_k$ and $df_k$ denote a cashflow or discount factor at time $k$,
 respectively. As a result, the backend for bond pricing is implemented as:
 
 \begin{hscode}
+-- 'bond' is be _any_ type that is an instance of Bond, and 
+-- 'someTS' is a term structure reflecting the market today.
+
+-- Retrieve payment date offsets
+offsets = getOffsets $ paymentDates bond 
+
+-- Get discount factors from our term structure
+discountFactors = dfsAt someTS offsets
+
+-- Get the cashflow of the bond
+cashflowList    = cashflow bond
+
+-- Price it!
 pv = sum $ zipWith (*) cashflowList discountFactors
 \end{hscode}
+
+For ease of exposition we have altered the function names, but these are the 
+the exact computations carried out by \hql.
 
 \section{Options, Futures and other Derivatives}
 
@@ -776,3 +868,9 @@ While it is possible to price European-style options using a closed-form
 solution, we must apply simulation methods to price the American counterpart.
 The computations required should be reflected by the declaration of
 \texttt{PricingEngine}.
+
+
+
+
+
+
