@@ -27,7 +27,8 @@ Figure \ref{fig:overview} shows an overview of the entities we are dealing with
 and situaion we wish to model. Ultimately, each item in this figure must somehow
 be represented in Haskell using a class or type depending on the the item.
 
-We want to model what we call a pricing engine, which combines the 
+We want to model a library that features financial products, mathematical models
+for valutation and finally what we call a pricing engine, which combines the 
 these contracts and mathematical models with the current state of the world
 in order to produce meaningful measurements of said contract.\\
 
@@ -41,7 +42,6 @@ in order to produce meaningful measurements of said contract.\\
 \end{center}
 \end{figure}
 
-Therefore, we must model the contracts, the models, and the external world.
 We shall begin with the modelling aspects and provide the reader with the
 matematical finance required. Thereafter we will present the contracts, and
 finally how such a pricing engine is modelled. 
@@ -81,7 +81,6 @@ occurs at after every period, which is not necessarily so. For instance, the
 equation \ref{eq:expcomp2} with $n=1$ and $m=2$ describes the return on a one-year
 investment with semiannual compounding:
 
-\ab{Do dependency crap}
 \begin{equation}\label{eq:expcomp2}
 FV_{T_n}^{n,m} = N (1 + \frac{R_T}{m})^{mn}
 \end{equation}
@@ -90,8 +89,8 @@ does not  All of these intricacies are critical for correctness of \hql and must
 be accounted for in the implementation.\\
 
 Up until this point we have assumed that the compounding is performed at 
-discrete intervals. However, as (1) is simply a formula, we may apply concepts 
-from calculus to achieve what is known as the continuously compounded interest 
+discrete intervals. However, as \ref{eq:expcomp} is simply a formula, we may apply 
+methods  from calculus to achieve what is known as the continuously compounded interest 
 rate. It is defined as the resulting interest rate when we take the limit of 
 equation \ref{eq:expcomp} as $n$ goes to infinity:
 
@@ -176,11 +175,12 @@ A central tenet of our architecture is that we keep the backend
 as simple as possible and keep the interface detailed and 
 self-explanatory. This way we keep the mathematical formulas as transparent
 and clean as possible while the interface remains user-friendly. An example
-of this is the \texttt{Offset} type, which indicates a point in 
-time relative to today, measured in years. For instance an offset of $0.5$
-means six months from today. As offsets are much easier to work with we may 
-avoid involving our calendar module entirely. This module will be described
-together with the interface in section \ref{sec:fi}.\\
+of this is our use of the \texttt{Offset} type, which indicates a point in 
+time relative to today, measured in years (e.g. an offset of $0.5$
+means six months from today). The interface, which remains to be seen, uses
+a somewhat convoluted Calendar module (due to several conventions in the 
+financial world), however the pricing backend we are currently describing 
+is completely oblivious to this fact.
 
 Further, as we mentioned above, advanced fixed income modelling and options 
 pricing often use the continuously compounded rates due to its mathematical 
@@ -189,7 +189,7 @@ need, as it essentially solves the following equation for $R_C^n$:
 
 \begin{equation}
 e^{R_C^n} = (1+R_p)^n
-\end{equation}.
+\end{equation}
 
 where is $R_p$ the exponentially (periodically) compounded rate.\\
 
@@ -401,9 +401,7 @@ fwdRate :: TermStructure -> Maturity -> Maturity -> Maybe Factor
 \end{hscode}
 
 For instance, \texttt{yieldAt} function applied to the term structure in
-figure \ref{fig:anc} with an offset of 3.5 years\footnote{Note that we use
-offsets from today as it greatly simplifies the implementation. The coming 
-sections will make this choice apparent.} would produce $2.4\%$. We have
+figure \ref{fig:anc} with an offset of 3.5 years would produce $2.4\%$. We have
 defined the following data types that are instances of the class above:
 
 \begin{figure}[h!]
@@ -613,6 +611,8 @@ We have designed a class to encapsulate the functionality of bonds:
 
 %%% Explain the Bond class %%%
 \begin{hscode}
+type Payment = (Date,Cash) -- A payment is cash on some date
+type Payments = [Payment]
 -- | Bond class specifies common denominator for all bond types 
 class Instrument b => Bond b where
   -- | Returns dirty price on a given date
@@ -639,11 +639,13 @@ the lifetime of a bond. As these loan-based bonds come in multiple flavours
 we have therefore created an \texttt{Amortized} class:
 
 \begin{hscode}
-class Amortized a where
-  TODO
+-- | Class declaration for amortized bonds
+class Bond a => Amortized a where
+  repayments :: a -> Payments
 \end{hscode}
 
-\texttt{repayments} now generate the blue repayment part of the cashflow
+allowing users to retrieve a list of payments representing the coupon payment
+subtracted from the cashflow. \texttt{repayments} now generate the blue repayment part of the cashflow
 we observe in figure \ref{fig:serialcf}.\\
 
 Returning to our serial example, we have defined a data type for fixed coupon
@@ -712,21 +714,58 @@ pv = sum $ zipWith (*) cashflowList discountFactors
 
 \section{Options, Futures and other Derivatives}
 
-In this section we describe how our architecture caters to other financial 
-products in addition to the fixed income instruments we have seen.\\
+In this section we briefly describe how our architecture caters to other
+financial products in addition to the fixed income instruments we have seen.\\
 
-Figure
+In figure \ref{fig:classhier} we defined the inheritance relations that
+exist in terms of financial products and how we are to model them using 
+Haskell's class system. \hql currently implements the toolbox required
+for the implementation of the resulting products. The only constraint on
+new additions to \hql is the \texttt{Instrument} class which all products
+must be an instance. This means that the challenge lies the the fact
+that we must define an appropriate \texttt{PricingEngine} type for each
+class of products.\\
 
-First of all, a natural next step in the development of HQL is the 
-implementation of derivatives which is itself a product relying on another- the 
-\emph{underlying} - hence the the name. An example of this is 
-a forward-rate agreement, the simplest being an agreement where two parties 
-agree on a future trade of a commodity. It should be obvious that the price of 
-the underlying directly affects the value of having entered such an agreement.\\
+A \emph{call option} is a contract that gives the holder the right to purchase
+(or \emph{exercise} a good or service (this is called the \emph{underlying}) 
+at a specific price (the \emph{strike}). What pricing engine is appropriate 
+for such a contract; does it depend on the underlying?
+In fixed income we saw that the term structure of interest rates qualified,
+but this is not the case for options.
 
-However, with the addition of floating rate bonds, we may model fixed income 
-derivatives such as swaps. A swap is contract in which two counterparties agree 
-to exchange two cashflows.
+Instead, we may want to use a Black-Scholes model for European
+options\cite{cmunk} or a binomial model for American\footnote{The distinction
+between American and European has nothing to do with geography. European
+options may only be exercised at maturity, while American ones can be
+exercised at any time.} options.
+
+While it is possible to price European-style options using a closed-form 
+solution, we must apply simulation methods to price the American counterpart.\\
+The associated type, \texttt{PricingEngine} is therefore liberal enough to
+allow us to specify something like:
+
+\begin{hscode}
+-- European options
+newtype BlackScholes = (EuropeanOption -> Cash)
+instance Instrument EuropeanOption where
+  type PricingEngine = BlackScholes
+
+-- American options
+instance Instrument EuropeanOption where
+  type PricingEngine = BinomialModel
+\end{hscode}
+\ab{Still working on this}
+
+%First of all, a natural next step in the development of HQL is the 
+%implementation of derivatives which is itself a product relying on another- the 
+%\emph{underlying} - hence the the name. An example of this is 
+%a forward-rate agreement, the simplest being an agreement where two parties 
+%agree on a future trade of a commodity. It should be obvious that the price of 
+%the underlying directly affects the value of having entered such an agreement.\\
+%
+%However, with the addition of floating rate bonds, we may model fixed income 
+%derivatives such as swaps. A swap is contract in which two counterparties agree 
+%to exchange two cashflows.
 
 %Fixed
 %Floating
@@ -736,8 +775,8 @@ to exchange two cashflows.
 %Floating
 %Vanilla
 
-There are two obvious ways in which we can extend HQL with interest rate 
-derivatives support. For instance, swaps can be modelled by combining a fixed 
-and a floating leg, the latter still not yet being supported. On the other 
-hand, it could be built as a list of forward-rate agreements (make sure this is 
-explained above, or refer to Appendix) between the two parties in question.
+%There are two obvious ways in which we can extend HQL with interest rate 
+%derivatives support. For instance, swaps can be modelled by combining a fixed 
+%and a floating leg, the latter still not yet being supported. On the other 
+%hand, it could be built as a list of forward-rate agreements (make sure this is 
+%explained above, or refer to Appendix) between the two parties in question.
