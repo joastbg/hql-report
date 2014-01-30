@@ -236,9 +236,11 @@ interest earned between two dates. The following equation shows how this is
 computed:
 
 \begin{equation}\label{eq:dcc}
-\frac{\text{Number of days between two dates}}{\text{Days in a year}} \cdot \text{Interest earned between the two dates}
+\text{Interest between the dates} = \\
+\frac{\text{Number of days between two dates}}{\text{Days in a year}} \cdot \text{Annual rate}
 \end{equation}
 
+Hull\cite{HULL} explains this convention in detail.
 In finance, the number of days in a given month or year is specified by the
 basis, not the calendar. There are various ways of computing the both the numerator
 and the denominator we see in equation \ref{eq:dcc}, the reason being that some
@@ -247,9 +249,9 @@ has support for:
 
 \begin{hscode}
 -- | Frequently used conventions 
-data Basis = ACTACT -- Actual no. days / Actual days in year
-           | ACT360 -- Actual no. days / 360, always 360 days in a year
-           | ACT365F -- Actual no. days / 365
+data Basis = ACTACT -- Actual no. days / Actual days in year (leap year differs)
+           | ACT360    -- Actual no. days / 360, assumes 360 days in a year
+           | ACT365F   -- Actual no. days / 365, assumes 365 days in a year
            | Thirty360 -- Described below
 
 class DayCount d where
@@ -257,7 +259,8 @@ class DayCount d where
 \end{hscode}
 
 \texttt{Thirty360} assumes that all months have 30 days, and that each year has
-360 days in total. This is more convenient as $\frac{360}{30}$ equals exactly 12.\\
+360 days in total. The motivation behind this convention is that is simplifies
+computations (and it is firmly cemented in the financial world).
 
 \section{Discounting}\label{sec:discounting}
 
