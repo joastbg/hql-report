@@ -4,9 +4,8 @@
 
 A financial security is a legal claim on a firm's asset or income 
 that is traded in an organized market\cite{alexander2008market}.
-A portfolio is a number of positions in such securities like common
+A portfolio is a number of positions in securities like common
 stock or debt-based instruments such as bonds.
-%and other types of financial instruments. 
 
 These instruments are typically traded on an exchange such as 
 \href{http://www.nasdaqomxnordic.com/}{NASDAQ OMX Nordic}, but so-called
@@ -18,24 +17,25 @@ whether resources could yield higher returns elsewhere.\\
 
 Financial instruments are priced differently, some using closed-form functions
 and others relying on stochastic simulation such as Monte Carlo to replicate 
-random-walk behaviour of stock prices\cite{HULL}.
+random-walk behaviour of stock prices\cite{HULL}.\\
 
 % FI, Interest rates
 In this project we shall focus on contracts where closed-form solutions are
 available. Such contracts are ubiquitous in the debt market (also called fixed
-income), and determining their price depends on the observable market interest
+income), and their price depends on the observable market interest
 rates. The rates indicate how much an institution is willing to pay you for
 managing your funds for a given period of time, introducing the concept
 \emph{time value of money}. Intuitively, interest payment (or coupon) is
-the cash value of the opportunity cost caused by having your funds tied up.\\
-Therefore an investor is able to gauge whether or not an investment will be
+the cash value of the opportunity cost caused by having your funds tied up.
+An investor is then able to gauge whether or not an investment will be
 fruitful by comparing the dividend with what he or she would receive by 
 depositing the money in the bank.\\
+
 % Discounting
 Implicitly, we have also introduced another concept called \emph{discounting},
 which is simply a way of pricing a future cashflow by removing the interest
-rate that could theoretically by earned in the current market. As payment structures
-in fixed income products become more advanced, the investor from above will 
+rate that could theoretically be earned in the current market. As payment structures
+in fixed income products become more advanced, the investor mentioned above will 
 face difficulties when trying to allocate his resources just by looking at the
 rates of the products. Discounting applies the time value of money to all
 future income to scale them back to the present, resulting in the price (or
@@ -44,8 +44,8 @@ future income to scale them back to the present, resulting in the price (or
 % Credit risk
 In addition to the pricing mechanism presented above, we also briefly introduce
 the notion of credit risk. Credit risk is a method of evaluating the creditworthiness
-of a debitor, i.e. quantifying how likely it is that the counterpart will pay back 
-its debt. This is not considered for exchange-traded products, as losses 
+of a debtor, i.e. quantifying how likely it is that the counterpart will pay back 
+his debt. This is not considered for exchange-traded products, as losses 
 caused by defaults are covered by the members of the exchange\footnote{If a large 
 exchange defaults the world economy would be in turmoil.}. However, for OTC
 products, the evaluation of credit risk is critical as the consequences of a 
@@ -64,11 +64,11 @@ supporting a wide array of financial products ranging from bonds to more
 exotic derivatives. Many products share the same characteristics, and
 Quantlib takes advantage of this by making heavy use of C++'s templates 
 and multiple  inheritance to model the products at a high level of 
-abstraction\cite{implql}
+abstraction\cite{implql}.
 In this project we wish to model the same products as Quantlib using Haskell's
 language constructs.\\
 
-Hquantlib\cite{hquantlib} is an attempt at a Haskell port of Quantlib
+Hquantlib\cite{hquantlib} is an attempt at a Haskell port of Quantlib,
 but is still in its infancy and the
 \href{https://github.com/paulrzcz/hquantlib/tree/master}{official repositories}
 are approaching one year standstill.\\
