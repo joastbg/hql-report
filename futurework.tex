@@ -39,17 +39,18 @@ type Simulation = State StdGen -- abstract away random number generator
 randomUnit :: Simulation Double
 randomUnit = state $ randomR (0,1)
 
--- | Converts a uniform distributin sample into a 
+-- | Converts a uniform distributin sample into a
 -- normal gaussian distributed sample.
 boxMuller :: Simulation Double
 boxMuller = do
   u0 <- randomUnit
   return $ transform u0 u0
-  where transform x y = sqrt(-2*log x)*cos(2*pi*y)
+  where transform x y = sqrt(-2*log x )*cos(2*pi*y)
 
--- | A standard Brownian motion
-sbm :: Simulation [Double]
-sbm = sequence $ repeat boxMuller
+-- | A standard Brownian motion.
+-- | Returns a number of steps according to the Int parameter
+sbm :: Int -> Simulation [Double]
+sbm n = replicateM n boxMuller
 \end{hscode}
 
 Since the rate changes at regular intervals, it is very convenient for us
