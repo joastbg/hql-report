@@ -1,15 +1,15 @@
 \chapter{Key Concepts and Architecture}
 
 In this section we will go through the architecture of HQL and describe how we
-modelled the various of financial instruments in Haskell. We shall introduce
+modelled the various kinds of financial instruments in Haskell. We will introduce
 the necessary mathematical finance and conventions as we go along.
 
-\section{Language features}
+\section{Language Features}
 
 Functional languages lend themselves well to the domain of finance due
 to several reasons such as modularity\cite{hughes:matters-cj} and 
 laziness\cite{composingcontracts}. Moreover, the mathematical nature
-of finance makes functional languages suitable for valuation due its
+of finance makes functional languages suitable for valuation due to its
 inherent mathematical foundation and purity. Haskell's compositionality
 promotes code re-use and allows us to easily create new functions from
 existing ones. Haskell's standard library features a wide array of
@@ -22,16 +22,16 @@ class system allows us to define type-safe interfaces for operations on
 financial products who themselves can be represented by Haskell data types. 
 Statically typed languages have the advantage of discovering a multitude of
 errors at compile time, and the type class system enables us to overload 
-functionality in our programs based on our types. This is a very desirable
+functionality in our programmes based on our types. This is a very desirable
 feature, as we want our financial products to have the same API (e.g. a function 
 called \texttt{presentValue} should return the present value regardless of the
 product type).\\
 
 Figure \ref{fig:overview} shows an overview of the entities we are dealing with
 and situations we wish to model. Ultimately, each item in this figure must somehow
-be represented in Haskell using a class or type depending on the the item. We
+be represented in Haskell using a class or type depending on the item. We
 want to model a library that features financial products, mathematical models
-for valutation and finally what we call a pricing engine, which combines the 
+for valutation and finally what we call a pricing engine, which combines 
 these contracts and mathematical models with the current state of the world
 in order to produce meaningful measurements of said contract.\\
 
@@ -46,15 +46,15 @@ in order to produce meaningful measurements of said contract.\\
 \end{figure}
 
 We shall begin with the modelling aspects and provide the reader with the
-matematical background required. Thereafter we will present the contracts, and
-finally how such a pricing engine is modelled. 
+mathematical background required. Subsequently we will present the contracts, 
+and finally how such a pricing engine is modelled. 
 
 \section{Interest Rates}
 
 We begin our introduction to mathematical finance with a concept familiar to
 most, namely interest rates, which specify the amount of return on
 investing an amount of money for a set amount of time. This can be formulated
-using a very simple equation, which we will demonstrate with a one year flat
+using a very simple equation, which we will demonstrate with a one-year flat
 interest rate on a deposits account:
 
 \begin{equation}\label{eq:lincomp}
@@ -151,14 +151,14 @@ data ExponentialRate   = ExponentialRate Rate Frequency deriving (Show)
 \end{hscode}
 
 \hql assumes annualized interest rates. This way, we only require a
-\texttt{Frequency} (an integer) to denoting number of times interest
+\texttt{Frequency} (an integer) denoting number of times interest
 is compounded per year in the \texttt{ExponentialRate} type.
 Using the Haskell type system we can make sure that a continuously compounded
 rate is not mistakenly used in a function that expects a simple rate, and
 the use of \texttt{newtype} does not exacerbate overhead.\\
 
 As we will see, it is often convenient to convert a rate such as the ones above
-into equivalent a continuously compounded rate. We have therefore chosen to model an
+into an equivalent continuously compounded rate. We have chosen to model an
 \texttt{InterestRate} class that defines a number of methods, allowing for
 abstraction of the actual underlying rate:
 
@@ -187,10 +187,10 @@ e^{R_C^n} = (1+R_p)^n
 
 where is $R_p$ the exponentially (periodically) compounded rate.\\
 
-The \texttt{discountFactor} function introduces concept that we
+The \texttt{discountFactor} function introduces a concept that we
 explain in the following section. We refer to the \hql documentation\cite{hqldoc}
 for an in-depth treatment of the mathematical finance pertaining to interest
-rates.
+rates.\\
 
 A central tenet of our architecture is that we keep the backend
 as simple as possible and keep the interface detailed and 
@@ -199,14 +199,14 @@ and clean as possible while the interface remains user-friendly. An example
 of this is our use of the \texttt{Offset} type, which indicates a point in 
 time relative to today, measured in years (e.g. an offset of $0.5$
 means six months from today). The interface, which remains to be seen, uses
-a sophisticated \texttt{Calendar} module, however the pricing backend we
+a sophisticated \texttt{Calendar} module; however, the pricing backend we
 are currently describing is completely oblivious to this fact.\\
 
-Our calendar module features a wide range functions to accommodate date
+Our calendar module features a wide range of functions to accommodate date
 generation that cater to the numerous conventions in finance. As payments
 can only be made on business days, the \emph{roll convention} of a product
 determines how payments should be shifted in time in case of a local
-holiday such as the Danish \emph{Store Bededag} prevents a transaction from
+holiday such as the Danish \emph{Store Bededag} which prevents a transaction from
 being made. We present our date-interpolation function as an example:
 
 \begin{hscode}
@@ -224,14 +224,14 @@ interpolateDates :: Date           -- Start date
 The roll conventions \emph{Following} and \emph{Preceding} are intuitive, either
 force a move forward or backward if the date in question is illegal. 
 \emph{Modified following} is a mixture of the two - always move forward in time
-unlesss the new date is in the following month, in which case \emph{Preceding}
+unless the new date is in the following month, in which case \emph{Preceding}
 is applied.
 We use the \texttt{Data.Time} library to represent our \texttt{Date} type
 as it has excellent support for date manipulation.\\
 
 \ab{Reason for MF!}
 
-Further, the daycount conventions (or \emph{basis}) is used when computing the
+Further, the daycount convention (or \emph{basis}) is used when computing the
 interest earned between two dates. The following equation shows how this is
 computed:
 
@@ -242,14 +242,14 @@ computed:
 
 Hull\cite{HULL} explains this convention in detail.
 In finance, the number of days in a given month or year is specified by the
-basis, not the calendar. There are various ways of computing the both the numerator
+basis, not the calendar. There are various ways of computing both the numerator
 and the denominator we see in equation \ref{eq:dcc}, the reason being that some
-bases simplifies computations. We now present four basic conventions that \hql
+bases simplify computations. We now present four basic conventions that \hql
 has support for:
 
 \begin{hscode}
 -- | Frequently used conventions 
-data Basis = ACTACT -- Actual no. days / Actual days in year (leap year differs)
+data Basis = ACTACT -- Actual no. days / Actual days in the year (leap year differs!)
            | ACT360    -- Actual no. days / 360, assumes 360 days in a year
            | ACT365F   -- Actual no. days / 365, assumes 365 days in a year
            | Thirty360 -- Described below
@@ -285,7 +285,7 @@ DF_T FV_T= N (1 + R_T)
 Therefore our discount factor, $DF_T$, is $\frac{1}{1.05} \approx 0.95238$,
 so the \emph{present value} (or price) of the investment is \$$95.238$
 in the example above. If we have other viable options to invest in over the coming
-year, the decision becomes more complex.
+year, the decision becomes more complex.\\
 
 Imagine a second party offering \$$90$ in one year with an additional payment of
 \$$10$ after six months. Summing the two cashflows could make us believe that the
@@ -361,7 +361,7 @@ Again we refer the reader to the documentation\cite{hqldoc} for examples of
 how this is done in \hql.\\
 
 Since we must consider all options to maximize our profits, we must somehow have an
-overview of the interest rates currently offered in the market. This leads us onto the
+overview of the interest rates currently offered in the market. This leads us to the
 next key element in pricing, namely the term structure of interest rates.
 
 \section{Term Structure}\label{sec:ts}
@@ -421,7 +421,7 @@ socio-economic factors such as growth or decline in the economy.}.\\
 The term structure allows investors to observe at what price banks are
 currently willing to loan money. We emphasize the time sensitivity of the term
 structure, as external factors can cause sudden changes in the interest
-rates and as a result the pricing of instruments (e.g. rate cuts by the
+rates and as a result in the pricing of instruments (e.g. rate cuts by the
 European Central Bank). By the time value of money it is possible to
 appraise the value of an instrument (i.e. will the return on investment
 be up to par with what a bank can offer?).\\
@@ -445,7 +445,7 @@ a discrete term structure. Our \texttt{LinearInterpolatedTermStructure} is simil
 except it uses linear interpolation to estimate a term structure.
 Finally, The analytical term structure is simply a function with domain $\mathcal{R}^+_0$
 that maps an offset from valuation date to a zero interest rate over the given
-period.
+period.\\
 
 In addition, we have defined the following functions to look up interest rates
 or compute discount factors:
@@ -529,12 +529,13 @@ figure \ref{fig:anc} with an offset of 3.5 years would produce $2.4\%$.
 
 The reader should note that an interest rate with offset zero (that is, today) is
 always zero, since nobody would be willing to lend you money for a single day.
-This means that the discount factor today is always 1.
+This means that the discount factor today is always 1.\\
 
 Moreover, the forward rate function, \texttt{fwdRate}, is used to obtain the 
 implied future zero rates. There is no conceptual leap required to understand 
 these, as they are simply interest rates in the future, hence the type 
 signature requiring two offsets.\\
+
 Notwithstanding, their usefulness may not be evident. 
 Imagine three points in time, $d_0$ - today - and two
 offsets in the future $d_1$ and $d_2$. We are then tasked with finding out
@@ -556,7 +557,7 @@ prevailing interest rates.
 \section{Instruments}\label{sec:instruments}
 
 Now that we have established the basic theory of interest rates, discounting
-and term structures we turn to their application in financial instruments.
+and term structures we turn to their application in financial instruments.\\
 
 We have defined an \texttt{Instrument} class to represent the high-level
 functionality that all financial instruments must share:
@@ -575,11 +576,12 @@ class Instrument i where
 
 We require an associated type to represent a pricing engine since we
 cannot price all instruments in a similar fashion.\\
+
 Due to the high-level nature of this class, very few methods qualify.
 It is interesting to note that \hql defines the
 exact same two functions as Quantlib's \texttt{Instrument}
 class\cite{implql}. Also, Quantlib has an equivalent \texttt{PricingEngine}
-class to cater for the need of different pricing methods for different
+class to cater for the needs of different pricing methods for different
 products.\\
 
 \begin{figure}[!h]
@@ -610,11 +612,12 @@ In this section we will go through how we have modelled the subset of products
 in the \emph{fixed income} category, of which a product called bonds are 
 the bread and butter. In brief, a bond is a financial security that promises
 the bond holder a stream of future payments. These play a huge role in the 
-financial markets are are typically only offered by governments or large 
+financial markets and are typically only offered by governments or large 
 financial institutions.\\
+
 We will present our \texttt{FixedIncome} module by means of a running example
 of a bond. A \emph{serial} is an example of a bond that equates to a typical 
-Danish house loan. The cash flow of the holder of a 5 year serial with annual 
+Danish house loan. The cash flow of the holder of a 5-year serial with annual 
 repayments is depicted in figure \ref{fig:serialcf}.\\
 
 \begin{figure}[!h]
@@ -701,7 +704,7 @@ class Instrument b => Bond b where
 The \texttt{cashflow} function generates a list of payments exactly as shown
 in figure \ref{fig:serialcf} while \texttt{coupons} generates only the coupon
 payments. We define a function \texttt{dirty}, which is used by the \texttt{pv}
-function to return the price of a bond at a specific bond. "Dirty" means that
+function to compute the price of a bond at a specific bond. "Dirty" means that
 the price does not take into account the time value of money if the bond is
 sold between two coupon payments. That means that if a bond is sold a day before
 a coupon payment is due it is not reflected in the price. A "clean" price also
@@ -709,7 +712,7 @@ exists that accounts for the accrued interest between two payments, however
 \hql does not support this at the time of writing.\\
 
 A serial is an example of an \emph{amortized} bond, meaning that the entity
-who initially lended the money receives repayments over
+who initially lent the money receives repayments over
 the lifetime of a bond. As these loan-based bonds come in multiple flavours
 we have therefore created an \texttt{Amortized} class:
 
@@ -908,10 +911,10 @@ In figure \ref{fig:classhier} we defined the inheritance relations that
 exist in terms of financial products and how we are to model them using 
 Haskell's class system. \hql currently implements the toolbox required
 for the implementation of the resulting products. The only constraint on
-new additions to \hql is the \texttt{Instrument} class which all products
-must be an instance. This means that the challenge lies the the fact
-that we must define an appropriate \texttt{PricingEngine} type for each
-class of products.\\
+new additions (not in the fixed income category) is that they must be an
+instance of the \texttt{Instrument} class. This means that the challenge
+is to define an appropriate \texttt{PricingEngine}
+type for each class of products.\\
 
 \hql does not currently support options, but they serve as a good example
 of how pricing engines vary. 
@@ -922,7 +925,7 @@ options can only be exercised at maturity, while American options may be
 exercised at any point during the lifetime of the option.
 What pricing engine is appropriate for such contracts; does it depend on the
 underlying? In fixed income we saw that the term structure of interest rates
-qualified, but this is not the case for options.
+qualified, but this is not the case for options.\\
 
 Instead, we may want to use a Black-Scholes model for European
 options or a binomial model for American options\cite{HULL}.
