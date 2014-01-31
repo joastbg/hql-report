@@ -14,9 +14,12 @@ interest rates to discount our cashflows. In other words, this data is
 external to the models we use.\\
 
 Therefore it is desirable to wrap our computations in a monad that allows us
-to structure our program in a pure manner.
-
-\ab{Will elaborate.}
+to structure our program in a pure manner. A \texttt{MonadReader} monad is an obvious
+choice to carry an environment throughout the program (such as a term structure or
+currently quoted exchange rates). Moreover, we would like \hql to handle exceptional
+behaviour in an elegant way. If a user attempts to price a cashflow in the past we 
+simply fail the computation using Haskell's \texttt{error}. It would be preferable 
+to use the \texttt{ErrorT} monad transformer to structure error handling.
 
 \section{Floating rates}
 
