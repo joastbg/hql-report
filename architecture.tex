@@ -2,7 +2,7 @@
 
 In this section we will go through the architecture of HQL and describe how we
 modelled the various kinds of financial instruments in Haskell. We will introduce
-the necessary mathematical finance and conventions as we go along.
+the necessary mathematical background and conventions as we go along.
 
 \section{Language Features}
 
@@ -12,7 +12,8 @@ laziness\cite{composingcontracts}. Moreover, the mathematical nature
 of finance makes functional languages suitable for valuation due to its
 inherent mathematical foundation and purity. Haskell's compositionality
 promotes code re-use and allows us to easily create new functions from
-existing ones. Haskell's standard library features a wide array of
+existing ones, a useful feature since financial products often share
+ very similar functionality. Haskell's standard library features a wide array of
 functions for list manipulation which are convenient as this data structure
 is used to represent cashflows.\\
 
@@ -28,12 +29,12 @@ called \texttt{presentValue} should return the present value regardless of the
 product type).\\
 
 Figure \ref{fig:overview} shows an overview of the entities we are dealing with
-and situations we wish to model. Ultimately, each item in this figure must somehow
-be represented in Haskell using a class or type depending on the item. We
-want to model a library that features financial products, mathematical models
-for valutation and finally what we call a pricing engine, which combines 
-these contracts and mathematical models with the current state of the world
-in order to produce meaningful measurements of said contract.\\
+and situations we wish to model. We want to model a library that features 
+financial products, mathematical models for valutation and finally what we 
+call a pricing engine, which combines these contracts and mathematical models 
+with the current state of the world in order to produce meaningful measurements 
+of said contract. Ultimately, each item in this figure must somehow
+be represented in Haskell using a class or type depending on the item.\\
 
 \begin{figure}[h!]
 \begin{center}
@@ -71,7 +72,7 @@ capital. Mathematically, this return can be formulated as an exponentially
 compounded interest rate:
 
 \begin{equation}\label{eq:expcomp}
-FV_{T_n} = N (1 + R_{T_n})^n
+FV_{T_n}^n = N (1 + R_{T_n})^n
 \end{equation}
 
 where $FV$ is now dependent on the number of times it is compounded, and is 
@@ -141,7 +142,7 @@ Continuous & \textcolor{red}{\xmark} & Continouous\\\hline
 We see that the method of compounding has very distinct impact on the returns.
 From a modelling perspective, this means that we have designed Haskell
 data types to distinguish between interest rates differing in the compound
-method as follows:
+method as follows:\\
 
 \begin{hscode}
 type Rate = Double
@@ -215,21 +216,19 @@ data RollConvention = Following -- Move forward in time
                     | ModifiedFollowing -- Described below
 
 interpolateDates :: Date           -- Start date
-                 -> RollConvention -- The 
+                 -> RollConvention -- The roll convention used
                  -> Settlements    -- No. settlements per year
                  -> Date           -- End date
                  -> [Date]         -- Resulting interpolated dates
 \end{hscode}
 
 The roll conventions \emph{Following} and \emph{Preceding} are intuitive, either
-force a move forward or backward if the date in question is illegal. 
+force a move forward or backward if the date in question is invalid. 
 \emph{Modified following} is a mixture of the two - always move forward in time
 unless the new date is in the following month, in which case \emph{Preceding}
 is applied.
 We use the \texttt{Data.Time} library to represent our \texttt{Date} type
 as it has excellent support for date manipulation.\\
-
-\ab{Reason for MF!}
 
 Further, the daycount convention (or \emph{basis}) is used when computing the
 interest earned between two dates. The following equation shows how this is
@@ -240,12 +239,11 @@ computed:
 \frac{\text{Number of days between two dates}}{\text{Days in a year}} \cdot \text{Annual rate}
 \end{equation}
 
-Hull\cite{HULL} explains this convention in detail.
+Hull\cite{HULL} explains these conventions in detail.
 In finance, the number of days in a given month or year is specified by the
 basis, not the calendar. There are various ways of computing both the numerator
-and the denominator we see in equation \ref{eq:dcc}, the reason being that some
-bases simplify computations. We now present four basic conventions that \hql
-has support for:
+and the denominator we see in equation \ref{eq:dcc}. We now present four basic
+conventions that \hql has support for:
 
 \begin{hscode}
 -- | Frequently used conventions 
@@ -438,7 +436,7 @@ data TermStructure = DiscreteTermStructure (Map Maturity Rate)
                    | LinearInterpolatedTermStructure (Map Maturity Rate)
 \end{hscode}
 
-where a \texttt{Map} is simply a dictionary data structure i.e. a mapping.
+where a \texttt{Map} is simply a dictionary data structure.
 To better understand our data types we have shown them in figure \ref{fig:tstypes},
 where we see that the \texttt{dfAt} is only defined at certain points in time for
 a discrete term structure. Our \texttt{LinearInterpolatedTermStructure} is similar,
