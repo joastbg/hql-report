@@ -845,7 +845,38 @@ pv = sum $ zipWith (*) cashflowList discountFactors
 \end{hscode}
 
 For ease of exposition we have altered the function names, but these are the 
-the exact computations carried out by \hql.\
+the exact computations carried out by \hql. We have created a \texttt{HQL.hs}
+module in the top-level directory of our
+\href{https://github.com/HIPERFIT/HQL}{source code} that can be loaded directly
+into the Haskell interpreter 
+\href{http://www.haskell.org/haskellwiki/GHC/GHCi}{\texttt{ghci}} as follows:
+
+\begin{lstlisting}[style=BashInputStyle]
+# ghci HQL.hs
+\end{lstlisting}
+
+It also defines a number of instruments to allow users to experiment with the
+interface:
+
+\begin{lstlisting}[style=BashInputStyle]
+> :t bullet
+bullet :: FixedCouponBond
+> :t annuity
+annuity :: FixedAmortizedBond 
+> :t ts
+ts :: TermStructure 
+> pv annuity ts -- get present value according to the term structure
+> 118.79873512726166 kr
+> let myCashflow = cashflow annuity -- get the cashflow
+> mapM_ print myCashflow            -- pretty print it
+(2015-07-02,19.701746811018822 kr)
+(2015-12-31,19.701746811018822 kr)
+(2016-06-30,19.701746811018822 kr)
+(2016-12-29,19.701746811018822 kr)
+(2017-06-29,19.701746811018822 kr)
+(2017-12-28,19.701746811018822 kr)
+(2018-01-01,19.701746811018822 kr)
+\end{lstlisting}
 
 Finally, we have found graphical representations of cashflow such as figure
 \ref{fig:serialcf} and \ref{fig:annuitycf} incredibly useful tools during
@@ -858,7 +889,7 @@ one shown in figure \ref{fig:awesomeness}.
 %\begin{minipage}{\linewidth}
 %\makebox[\linewidth]{\includegraphics[keepaspectratio=true,scale=0.6]{images/Overview.pdf}}
 \includegraphics[keepaspectratio=true,scale=0.4]{images/GraphicsModuleAwesome.png}
-\caption{Displaying the use of \hql's \texttt{Visualize} module.}
+\caption{Displaying the use of \hql's \texttt{Visualize} module using a standard bullet bond.}
 \label{fig:awesomeness}
 %\end{minipage}
 \end{center}
