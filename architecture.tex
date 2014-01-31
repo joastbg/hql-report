@@ -847,16 +847,17 @@ pv = sum $ zipWith (*) cashflowList discountFactors
 For ease of exposition we have altered the function names, but these are the 
 the exact computations carried out by \hql. We have created a \texttt{HQL.hs}
 module in the top-level directory of our
-\href{https://github.com/HIPERFIT/HQL}{source code} that can be loaded directly
-into the Haskell interpreter 
-\href{http://www.haskell.org/haskellwiki/GHC/GHCi}{\texttt{ghci}} as follows:
+\href{https://github.com/HIPERFIT/HQL}{source code} (hosted at 
+\texttt{https://github.com/HIPERFIT/HQL)} that can be loaded directly into
+the Haskell interpreter 
+\href{http://www.haskell.org/haskellwiki/GHC/GHCi}{\texttt{ghci}} as follows:\\
 
 \begin{lstlisting}[style=BashInputStyle]
 # ghci HQL.hs
 \end{lstlisting}
-
+\vspace{0.3cm}
 It also defines a number of instruments to allow users to experiment with the
-interface:
+interface:\\
 
 \begin{lstlisting}[style=BashInputStyle]
 > :t bullet
@@ -877,6 +878,8 @@ ts :: TermStructure
 (2017-12-28,19.701746811018822 kr)
 (2018-01-01,19.701746811018822 kr)
 \end{lstlisting}
+
+\vspace{0.3cm}
 
 Finally, we have found graphical representations of cashflow such as figure
 \ref{fig:serialcf} and \ref{fig:annuitycf} incredibly useful tools during
