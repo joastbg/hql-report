@@ -189,7 +189,7 @@ e^{R_C^n} = (1+R_p)^n
 where is $R_p$ the exponentially (periodically) compounded rate.\\
 
 The \texttt{discountFactor} function introduces a concept that we
-explain in the following section. We refer to the \hql documentation\cite{hqldoc}
+explain in the following section. We refer to the \hql documentation in appendix C
 for an in-depth treatment of the mathematical finance pertaining to interest
 rates.\\
 
@@ -355,7 +355,7 @@ Assuming resources are limited, it may quickly become difficult to asses which
 option is opportune if the market offers multiple choices. As we saw above,
 the discount factor is implicit given the rate, hence the reason for
 \texttt{discountFactor} is part of the interface for interest rates.\\
-Again we refer the reader to the documentation\cite{hqldoc} for examples of
+Again we refer the reader to the documentation for examples of
 how this is done in \hql.\\
 
 Since we must consider all options to maximize our profits, we must somehow have an
@@ -670,7 +670,8 @@ We observe that the bond issuer makes fixed size deposits to the counterpart to
 repay the loan. Since there is no such thing as a free lunch, so-called coupon 
 payments are made in addition to compensate for having its funds tied up. These
 payments are simply the bond's interest rate applied to the face value of the
-bond, and are decreasing as a result of the repayment amortization\cite{hqldoc}.\\
+bond, and are decreasing as a result of the repayment amortization 
+(see appendix C).\\
 
 In addition to the serial, we present the most basic bond imaginable, the zero 
 coupon bond or simply \emph{zero}. It is exactly that - a bond with a specified 
@@ -814,7 +815,7 @@ different for this bond type, as we see in figure \ref{fig:annuitycf}.
 \end{figure}
 
 In addition to the zero and amortized bonds, \hql also features various other
-bond types\cite{hqldoc}.\\
+bond types (see the documentation in appendix C).
 
 The backend for pricing bonds exploits the fact that all instances must define
 the \texttt{cashflow} function. As we saw in section \ref{sec:discounting},
