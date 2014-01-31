@@ -17,7 +17,7 @@ income\cite{hqldoc}.
 \section{Language limitations}
 
 First we point out the limitations in terms of the choice of language.
-Haskell's type system becomes poses a challenge when we to do introduce
+Haskell's type system poses a challenge when we introduce
 \emph{impure} code - namely the \texttt{IO} monad.
 
 For instance, to model inter-currency swaps we need to retrieve the exchange 
@@ -29,7 +29,7 @@ but we do not have this luxury in Haskell due to the stickiness of the
 infeasible as it hides impurity into our code.
 Instead we can wrap our models in a monad that will perform the necessary 
 computations when given an environment. This solution may also be used to 
-retrieve market data and bootstrap a termstructure internally.\\
+retrieve market data and bootstrap a term structure internally.\\
 
 Moreover, \hql should ideally be extended to use a suitable library for
 IEEE floating point arithmetic as there are a number of issues regarding
@@ -61,11 +61,12 @@ cleaner solution.
 
 For instance, if we were to add a new term structure we could simply make it
 an instance of the \texttt{TermStructure} class. Instead, we now have to add it as a 
-constructor in th \texttt{TermStructure} data type and extend or create all of
+constructor in the \texttt{TermStructure} data type and extend or create all of
 the functionality around it.\\
+
 Regarding type safety, a class is also superior because we could potentially
-create a hierarchy of pricing engines and use constraints our instances as above.
-It would be a more organized design of the pricing engine architecture.
+create a hierarchy of pricing engines and use constraints in our instances as 
+above. It would be a more organized design of the pricing engine architecture.
 
 %\section{Limitations}
 %
