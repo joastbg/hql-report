@@ -1,3 +1,27 @@
 \chapter{Conclusion}
 
-\texttt{<< To be done at the end along with the abstract >>}
+In this project we have created the core instrastructure necessary for 
+valuation of financial products using Haskell. 
+
+We have modelled a type class hierarchy
+for the financial concepts and products that we require for a complete
+library for quantitative finance. This also suggests further development
+of \hql.
+
+Further, we have pointed out the myriad of conventions that exist in
+the financial domain, most of which pertain to the manipulation of dates.
+As a result, we have designed calendar and daycount convention modules
+that accounts for the most frequently used conventions.\\
+
+We have studied the different components of debt markets which resulted
+in modules for interest rates and term structures.
+Moreover, we have developed a functional fixed income module based on
+Sinan Gabel's \texttt{DerivativesExpert} library with support for five
+different types of bonds. As we have seen, this module uses discounting
+to compute the present value of fixed income products.
+
+We have also discussed the constraints in Haskell's type system when
+creating instances of the top-level \texttt{Instrument} class.
+
+Finally, we have suggested ways in which the \hql project should be improved,
+starting with floating-rate bonds and interest rate derivatives.
